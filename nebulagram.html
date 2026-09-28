@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>NebulaGram — шуточный клон Telegram</title>
+<style>
+:root{
+  --bg:#0e1621; --panel:#17212b; --panel2:#1e2a37; --divider:#232f3d;
+  --text:#e8eef5; --text2:#8ea0b3; --accent:#4ea4f5; --accent2:#3d8fd9;
+  --bubble-out:#2b5f8a; --bubble-in:#1e2a37; --danger:#ef5959; --ok:#4fd18b; --star:#ffcf4a;
+}
+body.light{
+  --bg:#f4f6f8; --panel:#ffffff; --panel2:#eef2f5; --divider:#e2e6ea;
+  --text:#0e1621; --text2:#6b7a89; --accent:#3d8fd9; --accent2:#2f74b8;
+  --bubble-out:#dcf0ff; --bubble-in:#ffffff; --danger:#d43f3f; --ok:#2fa870;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{margin:0; background:#05070a; color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; display:flex; align-items:flex-start; justify-content:center; min-height:100%; padding:10px;}
+#phone{width:100%; max-width:410px; height:min(890px,96vh); background:var(--bg); border-radius:34px; overflow:hidden; position:relative; box-shadow:0 30px 70px rgba(0,0,0,.55), 0 0 0 8px #000; display:flex; flex-direction:column;}
+#statusbar{flex:0 0 auto; height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 20px; font-size:13px; font-weight:600; color:var(--text); background:var(--bg); z-index:50;}
+#statusbar .right{display:flex; align-items:center; gap:5px; font-size:11px; opacity:.85; font-weight:500;}
+#content{flex:1 1 auto; overflow-y:auto; overflow-x:hidden; background:var(--bg); position:relative;}
+#content::-webkit-scrollbar{width:0;}
+#fabhost{position:absolute; inset:0; pointer-events:none; z-index:15;}
+#navslot{flex:0 0 auto;}
+.topbar{position:sticky; top:0; z-index:20; background:var(--panel); display:flex; align-items:center; min-height:52px; padding:6px 8px; gap:6px; border-bottom:1px solid var(--divider);}
+.topbar .back{font-size:22px; padding:6px 8px; cursor:pointer; color:var(--accent); flex:0 0 auto;}
+.topbar .title{font-size:17px; font-weight:700; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.topbar .sub{font-size:12px; color:var(--text2); font-weight:400; margin-top:1px;}
+.topbar .titlewrap{display:flex; flex-direction:column; flex:1 1 auto; min-width:0;}
+.topbar .actions{display:flex; gap:14px; padding-right:6px; font-size:20px; flex:0 0 auto;}
+.iconbtn{cursor:pointer; user-select:none;}
+.bottomnav{display:flex; align-items:center; justify-content:space-around; background:var(--panel); border-top:1px solid var(--divider); padding:8px 6px calc(8px + env(safe-area-inset-bottom));}
+.navitem{display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text2); font-size:10px; cursor:pointer; padding:4px 10px; border-radius:12px; position:relative;}
+.navitem.active{color:var(--accent);}
+.navitem .navicon{font-size:22px; line-height:1;}
+.navitem .navavatar{width:24px; height:24px; border-radius:50%; overflow:hidden;}
+.navitem .navavatar img{width:100%; height:100%; object-fit:cover;}
+.navbadge{position:absolute; top:-2px; right:2px; background:var(--danger); color:#fff; font-size:9px; font-weight:700; border-radius:8px; min-width:15px; height:15px; display:flex; align-items:center; justify-content:center; padding:0 3px;}
+.center-flow{display:flex; flex-direction:column; align-items:center; padding:50px 26px 30px; text-align:center; min-height:100%;}
+.hero-emoji{font-size:64px; margin-bottom:18px;}
+.flow-title{font-size:22px; font-weight:700; margin-bottom:8px;}
+.flow-sub{font-size:14px; color:var(--text2); line-height:1.5; margin-bottom:22px; max-width:300px;}
+.field-row{width:100%; display:flex; align-items:center; background:var(--panel2); border:1px solid var(--divider); border-radius:12px; padding:12px 14px; margin-bottom:12px;}
+.field-row.focus{border-color:var(--accent);}
+.field-row .prefix{color:var(--text2); margin-right:8px; font-size:16px;}
+.field-row input{flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:16px; min-width:0;}
+.field-row .chev{color:var(--text2);}
+.bigbtn{background:var(--accent); color:#fff; border:none; border-radius:14px; padding:13px 18px; font-size:15px; font-weight:700; cursor:pointer; width:100%;}
+.bigbtn.ghost{background:transparent; border:1.5px solid var(--accent); color:var(--accent);}
+.bigbtn.danger{background:var(--danger);}
+.bigbtn:disabled{opacity:.4;}
+.rowbtns{display:flex; gap:10px; width:100%; margin-top:2px;}
+.rowbtns .bigbtn{font-size:13px; padding:11px 6px;}
+.fab{position:absolute; right:16px; bottom:74px; width:56px; height:56px; border-radius:50%; background:var(--accent); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,.4); cursor:pointer; pointer-events:auto;}
+.codewrap{display:flex; gap:10px; margin-bottom:18px;}
+.codebox{width:42px; height:52px; border-radius:10px; background:var(--panel2); border:1.5px solid var(--divider); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700;}
+.codebox.filled{border-color:var(--accent);}
+.hiddeninput{position:absolute; opacity:0; height:1px; width:1px;}
+.avatar-picker{position:relative; width:96px; height:96px; margin-bottom:22px;}
+.avatar-picker .av{width:96px; height:96px; border-radius:50%; overflow:hidden; background:var(--panel2); display:flex; align-items:center; justify-content:center; font-size:34px; color:var(--text2);}
+.avatar-picker img{width:100%; height:100%; object-fit:cover;}
+.avatar-picker .camera{position:absolute; right:0; bottom:0; width:32px; height:32px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; border:3px solid var(--bg); cursor:pointer;}
+.searchbar{padding:8px 12px; background:var(--panel);}
+.searchbar input{width:100%; background:var(--panel2); border:none; border-radius:20px; padding:9px 14px; color:var(--text); font-size:14px; outline:none;}
+.folderrow{display:flex; gap:6px; padding:8px 10px; overflow-x:auto; background:var(--panel); border-bottom:1px solid var(--divider);}
+.folderpill{flex:0 0 auto; padding:7px 14px; border-radius:16px; font-size:13px; font-weight:600; background:var(--panel2); color:var(--text2); cursor:pointer; white-space:nowrap;}
+.folderpill.active{background:var(--accent); color:#fff;}
+.listitem{display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--divider);}
+.listitem:active{background:var(--panel2);}
+.avatar{width:50px; height:50px; border-radius:50%; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#fff; overflow:hidden; position:relative;}
+.avatar img{width:100%; height:100%; object-fit:cover;}
+.avatar .badgeicon{position:absolute; right:-2px; bottom:-2px; font-size:14px; background:var(--panel); border-radius:50%; padding:1px;}
+.li-mid{flex:1 1 auto; min-width:0;}
+.li-top{display:flex; justify-content:space-between; align-items:baseline; gap:6px;}
+.li-name{font-size:15.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.li-name.deleted{color:var(--text2); font-style:italic; font-weight:500;}
+.li-time{font-size:12px; color:var(--text2); flex:0 0 auto;}
+.li-bottom{display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:2px;}
+.li-msg{font-size:13.5px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.li-unread{background:var(--accent); color:#fff; font-size:11px; font-weight:700; border-radius:10px; min-width:20px; height:20px; padding:0 6px; display:flex; align-items:center; justify-content:center;}
+.li-muted{color:var(--text2); font-size:13px;}
+.emptystate{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:60px 30px; color:var(--text2);}
+.emptystate .em{font-size:70px; margin-bottom:14px;}
+.emptystate .t1{font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px;}
+.emptystate .t2{font-size:13.5px; line-height:1.5; max-width:260px;}
+.messages{padding:12px 10px 10px; display:flex; flex-direction:column;}
+.msgrow{display:flex; margin-bottom:6px;}
+.msgrow.out{justify-content:flex-end;}
+.bubble{max-width:76%; padding:8px 11px 6px; border-radius:16px; font-size:14.5px; line-height:1.35; position:relative; word-wrap:break-word; white-space:pre-wrap;}
+.bubble.in{background:var(--bubble-in); border-bottom-left-radius:4px;}
+.bubble.out{background:var(--bubble-out); border-bottom-right-radius:4px;}
+.bubble .sname{font-size:12px; font-weight:700; color:var(--accent); margin-bottom:2px; display:block;}
+.bubble .btime{font-size:10.5px; color:var(--text2); float:right; margin:4px 0 -2px 8px;}
+.systemmsg{align-self:center; background:rgba(255,255,255,.06); color:var(--text2); font-size:12px; padding:5px 12px; border-radius:12px; margin:8px auto; max-width:85%; text-align:center;}
+.typingind{align-self:flex-start; background:var(--bubble-in); border-radius:16px; padding:9px 13px; font-size:13px; color:var(--text2); margin-bottom:6px;}
+.inputbar{position:sticky; bottom:0; display:flex; align-items:flex-end; gap:8px; padding:8px 10px; background:var(--panel); border-top:1px solid var(--divider); z-index:10;}
+.inputbar textarea{flex:1; background:var(--panel2); border:none; border-radius:18px; padding:10px 14px; color:var(--text); font-size:14.5px; resize:none; outline:none; max-height:100px; font-family:inherit;}
+.sendbtn{width:38px; height:38px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:17px; cursor:pointer; flex:0 0 auto;}
+.profilehead{display:flex; flex-direction:column; align-items:center; padding:28px 20px 18px; text-align:center;}
+.profilehead .pname{font-size:20px; font-weight:700; margin-top:12px;}
+.profilehead .psub{font-size:13.5px; color:var(--text2); margin-top:3px;}
+.actionrow{display:flex; justify-content:center; gap:10px; padding:6px 16px 18px; flex-wrap:wrap;}
+.actionchip{display:flex; flex-direction:column; align-items:center; gap:4px; font-size:11px; color:var(--accent); cursor:pointer; width:64px;}
+.actionchip .aic{width:46px; height:46px; border-radius:50%; background:var(--panel2); display:flex; align-items:center; justify-content:center; font-size:19px; color:var(--accent);}
+.section{background:var(--panel); margin:10px; border-radius:14px; overflow:hidden;}
+.section .h{padding:8px 14px 4px; font-size:12.5px; color:var(--accent); font-weight:600;}
+.row{display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--divider); cursor:pointer;}
+.row:last-child{border-bottom:none;}
+.row .ric{font-size:20px; width:26px; display:flex; align-items:center; justify-content:center; color:var(--accent); flex:0 0 auto;}
+.row.danger .ric{color:var(--danger);}
+.row .rtxt{flex:1 1 auto; min-width:0;}
+.row .rmain{font-size:15px;}
+.row .rsub{font-size:12.5px; color:var(--text2); margin-top:2px;}
+.row.danger .rmain{color:var(--danger);}
+.row .chev{color:var(--text2); font-size:18px;}
+.switch{position:relative; width:44px; height:26px; border-radius:14px; background:var(--divider); flex:0 0 auto; cursor:pointer; transition:.15s;}
+.switch.on{background:var(--accent);}
+.switch .knob{position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; transition:.15s; box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.switch.on .knob{left:20px;}
+.textinput{width:100%; background:var(--panel2); border:1px solid var(--divider); border-radius:10px; padding:10px 12px; color:var(--text); font-size:14.5px; outline:none; font-family:inherit;}
+textarea.textinput{resize:vertical; min-height:70px;}
+.formlabel{font-size:12.5px; color:var(--text2); margin:14px 10px 6px;}
+.hint{font-size:12px; color:var(--text2); padding:10px 16px 16px; line-height:1.5;}
+.sheet-backdrop{position:absolute; inset:0; background:rgba(0,0,0,.5); z-index:100; display:flex; align-items:flex-end;}
+.sheet{width:100%; background:var(--panel); border-radius:18px 18px 0 0; padding:6px 0 calc(6px + env(safe-area-inset-bottom)); animation:slideup .18s ease-out;}
+@keyframes slideup{from{transform:translateY(100%)} to{transform:translateY(0)}}
+.sheet .sitem{padding:14px 20px; font-size:16px; cursor:pointer; display:flex; align-items:center; gap:10px;}
+.sheet .sitem.danger{color:var(--danger);}
+.sheet .sitem:active{background:var(--panel2);}
+.sheet .scancel{margin-top:6px; padding:14px 20px; font-size:16px; font-weight:700; text-align:center; color:var(--accent); border-top:6px solid var(--bg); cursor:pointer;}
+.modal-backdrop{position:absolute; inset:0; background:rgba(0,0,0,.55); z-index:110; display:flex; align-items:center; justify-content:center; padding:24px;}
+.modalbox{width:100%; max-width:320px; background:var(--panel); border-radius:16px; padding:20px; max-height:80%; overflow-y:auto;}
+.modalbox .mtitle{font-size:17px; font-weight:700; margin-bottom:8px;}
+.modalbox .mbody{font-size:14px; color:var(--text2); line-height:1.5; margin-bottom:16px;}
+.modalbox .mrow{display:flex; gap:10px; margin-top:14px;}
+.pickitem{display:flex; align-items:center; gap:10px; padding:9px 4px; cursor:pointer; border-radius:8px;}
+.pickitem input{width:18px; height:18px;}
+.pickitem:active{background:var(--panel2);}
+.toast{position:absolute; left:50%; bottom:80px; transform:translateX(-50%); background:#2c2c2e; color:#fff; padding:10px 18px; border-radius:20px; font-size:13.5px; z-index:200; box-shadow:0 4px 14px rgba(0,0,0,.4); max-width:85%; text-align:center;}
+.stargame{margin:14px; padding:20px; border-radius:18px; background:linear-gradient(160deg,#2a2038,#1c1730); text-align:center;}
+.stargame .sbig{font-size:46px; margin-bottom:4px;}
+.starbtn{width:130px; height:130px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#ffe27a,#e0a915); border:none; font-size:44px; color:#7a5300; cursor:pointer; box-shadow:0 8px 24px rgba(224,169,21,.4); margin:14px auto; display:block;}
+.starbtn:active{transform:scale(.94);}
+.starbtn:disabled{filter:grayscale(1); opacity:.5;}
+.energybar{width:100%; height:8px; background:rgba(255,255,255,.12); border-radius:5px; overflow:hidden; margin-top:10px;}
+.energyfill{height:100%; background:var(--ok); transition:width .3s;}
+.rolebadge{font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:8px; background:var(--panel2); color:var(--text2); white-space:nowrap;}
+.rolebadge.owner{color:var(--star); background:rgba(255,207,74,.15);}
+.rolebadge.admin{color:var(--accent); background:rgba(78,164,245,.15);}
+.rolebadge.frozen{color:#7ec8ff; background:rgba(126,200,255,.12);}
+.quoteblock{border-left:3px solid var(--accent); padding:3px 8px; margin-bottom:5px; background:rgba(255,255,255,.06); border-radius:6px; opacity:.9;}
+.quoteblock .qname{font-size:11.5px; font-weight:700; color:var(--accent); display:block;}
+.quoteblock .qtext{font-size:12.5px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;}
+.fwdlabel{font-size:11.5px; font-weight:700; color:var(--accent); margin-bottom:3px; display:flex; align-items:center; gap:4px;}
+.msgimg{max-width:100%; border-radius:10px; display:block; margin-bottom:4px;}
+.reactrow{display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;}
+.reactpill{display:flex; align-items:center; gap:3px; background:rgba(255,255,255,.1); border-radius:10px; padding:2px 7px; font-size:11.5px; cursor:pointer; color:var(--text);}
+.reactpill.mine{background:var(--accent); color:#fff;}
+.readtick{display:inline-flex; vertical-align:middle; margin-left:3px; color:var(--text2);}
+.readtick.seen{color:var(--accent);}
+.replybar{display:flex; align-items:center; gap:8px; padding:7px 12px; background:var(--panel2); border-top:1px solid var(--divider);}
+.replybar .rb-line{width:3px; align-self:stretch; background:var(--accent); border-radius:2px;}
+.replybar .rb-mid{flex:1 1 auto; min-width:0;}
+.replybar .rb-name{font-size:12px; font-weight:700; color:var(--accent);}
+.replybar .rb-text{font-size:12.5px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.replybar .rb-close{cursor:pointer; color:var(--text2); flex:0 0 auto;}
+.pinnedbar{display:flex; align-items:center; gap:8px; padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--divider); cursor:pointer;}
+.pinnedbar .pb-mid{flex:1 1 auto; min-width:0;}
+.pinnedbar .pb-label{font-size:11px; color:var(--accent); font-weight:700;}
+.pinnedbar .pb-text{font-size:12.5px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.attachbtn{width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text2); cursor:pointer; flex:0 0 auto;}
+.searchinput{flex:1; background:var(--panel2); border:none; border-radius:16px; padding:7px 12px; color:var(--text); font-size:14px; outline:none;}
+
+mark{background:#f5c542;color:#000;border-radius:3px;padding:0 1px;}
+.banner{background:rgba(212,63,63,.14);color:var(--text);font-size:12.5px;padding:10px 14px;line-height:1.4;}
+.banner .btn{display:inline-block;margin-top:6px;color:var(--accent);font-weight:700;cursor:pointer;}
+.pinnedbar,.chatsearch{position:sticky;top:52px;z-index:19;}
+.chatsearch{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--divider);color:var(--text2);}
+.cscount{font-size:12px;color:var(--text2);min-width:38px;text-align:center;}
+.reactrow{clear:both;}
+.reactpick{display:flex;justify-content:space-around;padding:14px 10px 8px;color:var(--accent);}
+.reactpick span{cursor:pointer;padding:6px 12px;border-radius:14px;display:flex;}
+.reactpick span:active{background:var(--panel2);}
+.voicebub{display:flex;align-items:center;gap:8px;min-width:170px;cursor:pointer;padding:2px 0;}
+.vplay{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.vwave{display:flex;align-items:center;gap:2px;height:22px;flex:1;}
+.vwave i{display:block;width:3px;border-radius:2px;background:var(--text2);opacity:.6;}
+.vwave i.on{background:var(--accent);opacity:1;}
+.vdur{font-size:11.5px;color:var(--text2);}
+.pollq{font-weight:700;margin-bottom:6px;display:flex;gap:6px;align-items:flex-start;}
+.pollopt{position:relative;display:flex;align-items:center;gap:8px;padding:6px 8px;margin:3px 0;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.06);cursor:pointer;min-width:210px;}
+.pollopt>*{position:relative;}
+.pollopt .pollbar{position:absolute;left:0;top:0;bottom:0;background:rgba(78,164,245,.3);transition:width .3s;}
+.pollchk{width:16px;color:var(--accent);display:inline-flex;}
+.pollt{flex:1;font-size:13.5px;}
+.pollpct{font-size:12px;color:var(--text2);}
+.pollmeta{font-size:11.5px;color:var(--text2);margin-top:4px;}
+.giftbub{display:flex;align-items:center;gap:10px;padding:4px 2px;}
+.giftbub .gic{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#ff8a5c,#e0447a);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.msg-hl>.bubble{animation:hlflash 1.5s;}
+@keyframes hlflash{0%,60%{box-shadow:0 0 0 3px var(--accent);}100%{box-shadow:none;}}
+.inputbar.rec{align-items:center;}
+.recdot{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:blinkdot 1s infinite;}
+.rectime{flex:1;font-size:15px;}
+@keyframes blinkdot{50%{opacity:.25;}}
+.bubble{cursor:pointer;}
+.bubble .readtick svg{vertical-align:-2px;}
+</style>
+</head>
+<body>
+<div id="phone">
+  <div id="statusbar">
+    <span id="clock">12:00</span>
+    <span class="right"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><rect x="2.5" y="12" width="3" height="6"/><rect x="7.5" y="8.5" width="3" height="9.5"/><rect x="12.5" y="5" width="3" height="13"/><rect x="17.5" y="2" width="3" height="16" opacity="0.35"/></svg><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 9.2a13 13 0 0 1 17 0"/><path d="M6.6 12.7a8.6 8.6 0 0 1 10.8 0"/><path d="M9.8 16.1a4 4 0 0 1 4.4 0"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></svg><span>42%</span><svg viewBox="0 0 24 24" width="19" height="11" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="18" height="10" rx="2"/><line x1="22.2" y1="10" x2="22.2" y2="14"/><rect x="4" y="9" width="10" height="6" fill="currentColor" stroke="none"/></svg></span>
+  </div>
+  <div id="content"></div>
+  <div id="fabhost"></div>
+  <div id="navslot"></div>
+</div>
+
+<script>
+/* ===================== STATE ===================== */
+function uid(p){ return (p||'id')+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function randOf(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* ===================== ICONS (SVG, replaces UI emoji) ===================== */
+const ICONS={
+  message:'<path d="M4 5.5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9.5l-4.2 3.8v-3.8H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z"/>',
+  user:'<circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>',
+  users:'<circle cx="8.7" cy="8" r="3"/><circle cx="16.2" cy="9.3" r="2.5"/><path d="M2.5 20c0-3.4 2.8-6.2 6.2-6.2s6.2 2.8 6.2 6.2"/><path d="M14.7 14.1c2.7.4 4.8 2.8 4.8 5.9"/>',
+  gear:'<circle cx="12" cy="12" r="3.1"/><path d="M12 2.7v3M12 18.3v3M4.4 4.4l2.1 2.1M17.5 17.5l2.1 2.1M2.7 12h3M18.3 12h3M4.4 19.6l2.1-2.1M17.5 6.5l2.1-2.1"/>',
+  search:'<circle cx="10.3" cy="10.3" r="6.3"/><line x1="20" y1="20" x2="15.2" y2="15.2"/>',
+  phone:'<path d="M6.6 3h2.6l1.7 4.3-2.2 1.9a12.4 12.4 0 0 0 5.9 5.9l1.9-2.2 4.3 1.7v2.6a1.8 1.8 0 0 1-2 1.8A16.8 16.8 0 0 1 4.8 5a1.8 1.8 0 0 1 1.8-2z"/>',
+  phonecall:'<path d="M6.6 3h2.6l1.7 4.3-2.2 1.9a12.4 12.4 0 0 0 5.9 5.9l1.9-2.2 4.3 1.7v2.6a1.8 1.8 0 0 1-2 1.8A16.8 16.8 0 0 1 4.8 5a1.8 1.8 0 0 1 1.8-2z"/><path d="M16.3 2.8c1.7.6 3 1.9 3.6 3.6"/>',
+  camera:'<rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M8.2 7l1.3-2.2a1 1 0 0 1 .9-.5h3.2a1 1 0 0 1 .9.5L15.8 7"/><circle cx="12" cy="13.6" r="3.5"/>',
+  check:'<polyline points="4,12.7 9,17.7 20,6"/>',
+  checkdouble:'<polyline points="1,12.7 6,17.7 12.5,10.5"/><polyline points="8.5,12.7 13.5,17.7 23,6"/>',
+  megaphone:'<path d="M3 9.3v5.4h3l5 4V5.3l-5 4z"/><path d="M14 8.3a4.3 4.3 0 0 1 0 7.4"/><path d="M17 5.8a7.8 7.8 0 0 1 0 12.4"/>',
+  snowflake:'<line x1="12" y1="2.5" x2="12" y2="21.5"/><line x1="4.4" y1="7.2" x2="19.6" y2="16.8"/><line x1="19.6" y1="7.2" x2="4.4" y2="16.8"/>',
+  slash:'<circle cx="12" cy="12" r="9"/><line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/>',
+  pin:'<path d="M12 21s7-6.2 7-11.3A7 7 0 0 0 5 9.7C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/>',
+  bell:'<path d="M6 10.2a6 6 0 0 1 12 0v3.6l2 3.2H4l2-3.2z"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/>',
+  bellslash:'<path d="M6 10.2a6 6 0 0 1 10.3-4.2"/><path d="M18 10.2v3.6l2 3.2H4l2-3.2v-1"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0"/><line x1="3.5" y1="3.5" x2="20.5" y2="20.5"/>',
+  logout:'<path d="M9.5 4.3H5.3a1 1 0 0 0-1 1v13.4a1 1 0 0 0 1 1H9.5"/><line x1="21" y1="12" x2="9.3" y2="12"/><polyline points="16.5,7.2 21,12 16.5,16.8"/>',
+  trash:'<path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  edit:'<path d="M4 20l.9-4.2L15.8 4.9a1.6 1.6 0 0 1 2.2 0l1.1 1.1a1.6 1.6 0 0 1 0 2.2L8.2 19.1z"/><line x1="14.3" y1="6.4" x2="17.6" y2="9.7"/>',
+  link:'<path d="M9.4 14.6l5.2-5.2"/><path d="M7.8 16.6l-1.5 1.5a3.6 3.6 0 0 1-5.1-5.1l2.9-2.9"/><path d="M16.2 7.4l1.5-1.5a3.6 3.6 0 0 1 5.1 5.1l-2.9 2.9"/>',
+  star:'<path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1-5.4-2.9-5.4 2.9 1.1-6.1-4.5-4.3 6.1-.8z"/>',
+  lock:'<rect x="5" y="10.7" width="14" height="9.3" rx="2"/><path d="M8 10.7V8.2a4 4 0 0 1 8 0v2.5"/>',
+  database:'<ellipse cx="12" cy="6" rx="7.2" ry="3"/><path d="M4.8 6v6c0 1.7 3.2 3 7.2 3s7.2-1.3 7.2-3V6"/><path d="M4.8 12v6c0 1.7 3.2 3 7.2 3s7.2-1.3 7.2-3v-6"/>',
+  folder:'<path d="M3 7.2a1 1 0 0 1 1-1h4.6l2 2H20a1 1 0 0 1 1 1v9.6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+  monitor:'<rect x="3" y="4.5" width="18" height="12" rx="1.6"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16.5" x2="12" y2="20"/>',
+  battery:'<rect x="2" y="8" width="17" height="8" rx="1.6"/><line x1="21.3" y1="10.6" x2="21.3" y2="13.4"/><rect x="4" y="10" width="9" height="4" fill="currentColor" stroke="none"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/>',
+  gift:'<rect x="4" y="10" width="16" height="4" rx="0.6"/><rect x="6" y="14" width="12" height="7" rx="0.6"/><line x1="12" y1="10" x2="12" y2="21"/><path d="M12 10c0-2.5-2-4-3.5-4S6 7 6 8.3 7.5 10 9 10z"/><path d="M12 10c0-2.5 2-4 3.5-4S18 7 18 8.3 16.5 10 15 10z"/>',
+  wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h14.5a3 3 0 0 1 3 3"/><circle cx="16.6" cy="13.3" r="1.1" fill="currentColor" stroke="none"/>',
+  sparkles:'<path d="M12 3.2l1.2 3.6 3.6 1.2-3.6 1.2-1.2 3.6-1.2-3.6-3.6-1.2 3.6-1.2z"/><path d="M19 14l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6z"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.3 9.6a2.7 2.7 0 1 1 3.6 2.5c-.8.4-1 .9-1 1.7"/><line x1="12" y1="17" x2="12" y2="17.1"/>',
+  shield:'<path d="M12 3l7 3v5c0 5-3 8.6-7 10-4-1.4-7-5-7-10V6z"/><polyline points="8.5,12.2 11,14.7 15.5,9.6"/>',
+  filetext:'<path d="M6.2 3h7.8l4 4v14a1 1 0 0 1-1 1H6.2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15.6" x2="16" y2="15.6"/><line x1="8" y1="8.4" x2="12" y2="8.4"/>',
+  smartphone:'<rect x="7" y="2.5" width="10" height="19" rx="2"/><line x1="11" y1="18.2" x2="13" y2="18.2"/>',
+  cake:'<path d="M4 21v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 17c1 .8 2 .8 3 0s2-.8 3 0 2 .8 3 0 2-.8 3 0 2 .8 3 0"/><line x1="12" y1="9" x2="12" y2="13"/><path d="M12 3c1 .8 1 1.6 0 2.4s-1 1.6 0 2.4"/>',
+  bot:'<rect x="5" y="8.2" width="14" height="10" rx="2.4"/><circle cx="9.4" cy="13.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="14.6" cy="13.2" r="1.15" fill="currentColor" stroke="none"/><line x1="12" y1="8.2" x2="12" y2="4.7"/><circle cx="12" cy="3.6" r="1" fill="currentColor" stroke="none"/><line x1="3.3" y1="12.5" x2="5" y2="12.5"/><line x1="19" y1="12.5" x2="20.7" y2="12.5"/>',
+  warning:'<path d="M12 3.4l9.3 16.3H2.7z"/><line x1="12" y1="9.4" x2="12" y2="14"/><line x1="12" y1="16.7" x2="12" y2="16.8"/>',
+  moon:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+  palette:'<path d="M12 3a9 9 0 1 0 0 18c1.3 0 2-.9 2-1.9 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.4-1.3.1-.9.9-1.6 1.8-1.6H17a4 4 0 0 0 4-4C21 6.3 17 3 12 3z"/><circle cx="7.6" cy="10.6" r="1.15" fill="currentColor" stroke="none"/><circle cx="9.6" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="16.4" cy="10.6" r="1.15" fill="currentColor" stroke="none"/>',
+  volume:'<path d="M4 9.6h3.4L12 6.1v11.8l-4.6-3.5H4z"/><path d="M15.6 9.1a4 4 0 0 1 0 5.8"/><path d="M17.8 6.8a7.5 7.5 0 0 1 0 10.4"/>',
+  eye:'<path d="M2 12s3.6-6.4 10-6.4S22 12 22 12s-3.6 6.4-10 6.4S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>',
+  refresh:'<path d="M4.5 12a7.5 7.5 0 0 1 13-5.1l2.1 2.1"/><polyline points="19.6,3.5 19.6,9 14.1,9"/><path d="M19.5 12a7.5 7.5 0 0 1-13 5.1L4.4 15"/><polyline points="4.4,20.5 4.4,15 9.9,15"/>',
+  send:'<path d="M3 11.2l17-8-8 17-2.4-7.3z"/><line x1="20" y1="3.2" x2="9.4" y2="13.6"/>',
+  key:'<circle cx="7.8" cy="15.2" r="3.9"/><path d="M10.6 12.4l8.5-8.5"/><path d="M15.8 7.2l2.4 2.4"/><path d="M13.4 9.6l2 2"/>',
+  rocket:'<path d="M12 2.3c2.9 1.5 4.8 4.9 4.8 8.7 0 1.9-1 3.8-1.9 4.8l-2.9 2.9-2.9-2.9c-1-1-1.9-2.9-1.9-4.8 0-3.8 1.9-7.2 4.8-8.7z"/><circle cx="12" cy="9.6" r="1.7"/><path d="M9.2 16.2l-2.4 1 .5-2.9"/><path d="M14.8 16.2l2.4 1-.5-2.9"/>',
+  reply:'<polyline points="9,14.2 4.2,9.4 9,4.6"/><path d="M20 19.4v-6.8a4 4 0 0 0-4-4H4.2"/>',
+  forward:'<polyline points="15,14.2 19.8,9.4 15,4.6"/><path d="M4 19.4v-6.8a4 4 0 0 1 4-4h11.8"/>',
+  attach:'<path d="M8 12.6l7.2-7.2a3.3 3.3 0 0 1 4.6 4.6l-8.5 8.5a5.1 5.1 0 0 1-7.2-7.2l8-8"/>',
+  mic:'<rect x="9.4" y="3" width="5.2" height="10.4" rx="2.6"/><path d="M5.8 11a6.2 6.2 0 0 0 12.4 0"/><line x1="12" y1="17.4" x2="12" y2="21"/><line x1="8.8" y1="21" x2="15.2" y2="21"/>',
+  play:'<path d="M6 4.2l14 7.8-14 7.8z"/>',
+  chevleft:'<polyline points="15,4 7,12 15,20"/>',
+  dots:'<circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
+  close:'<line x1="5.5" y1="5.5" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="5.5" y2="18.5"/>',
+  wifi:'<path d="M3.5 9.2a13 13 0 0 1 17 0"/><path d="M6.6 12.7a8.6 8.6 0 0 1 10.8 0"/><path d="M9.8 16.1a4 4 0 0 1 4.4 0"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/>',
+  signal:'<rect x="2.5" y="12" width="3" height="6" fill="currentColor" stroke="none"/><rect x="7.5" y="8.5" width="3" height="9.5" fill="currentColor" stroke="none"/><rect x="12.5" y="5" width="3" height="13" fill="currentColor" stroke="none"/><rect x="17.5" y="2" width="3" height="16" fill="currentColor" stroke="none"/>',
+  heart:'<path d="M12 20.3S3.5 15.2 3.5 9.2A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.5 2.6c0 6-8.5 11.1-8.5 11.1z" fill="currentColor" stroke="none"/>',
+  laugh:'<circle cx="12" cy="12" r="9"/><path d="M7.5 13c1 2 2.7 3 4.5 3s3.5-1 4.5-3"/><line x1="8.3" y1="9.2" x2="8.3" y2="9.3"/><line x1="15.7" y1="9.2" x2="15.7" y2="9.3"/>',
+  fire:'<path d="M12 2.5c1 3 3.8 4 3.8 7.3a3.8 3.8 0 0 1-7.6 0c0-1.3.6-2.1 1.3-3-0.2 1 .2 1.6 .8 1.9-.3-2.6 1-4 1.7-6.2z"/><path d="M8.4 12.6a5.3 5.3 0 0 0 10.6-.4c0-2.6-1.3-4.1-2.6-5.6.4 2-.3 3.4-1.3 4.3.2-2-.6-3-1.5-4-1 2.4-5.2 3.1-5.2 5.7z"/>',
+  block:'<circle cx="12" cy="12" r="9"/><line x1="5.8" y1="18.2" x2="18.2" y2="5.8"/>',
+  qrcode:'<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h3v3h-3zM19 14h1.5M14 19.5h3M20.5 17v3.5h-3.5"/>',
+  pushpin:'<path d="M9 3.5h6l-1 5.2 3 3.3H7l3-3.3z"/><line x1="12" y1="12" x2="12" y2="20.5"/>',
+  copy:'<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/>',
+  info:'<circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><line x1="12" y1="7.6" x2="12" y2="7.7"/>',
+  dotsv:'<circle cx="12" cy="5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/>',
+  poll:'<line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/>',
+  image:'<rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M21 16l-5-5-8.5 8.5"/>',
+  pause:'<line x1="8" y1="5" x2="8" y2="19"/><line x1="16" y1="5" x2="16" y2="19"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><polyline points="12,7 12,12 15.5,14"/>',
+  like:'<path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z"/><path d="M7 11l3.6-7a2 2 0 0 1 3.6 1.2L13.5 9H18a2 2 0 0 1 2 2.4l-1.4 6A2 2 0 0 1 16.6 19H10a3 3 0 0 1-3-3v-5z"/>'
+};
+function icon(name, size, extraStyle){
+  size = size||20;
+  return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;display:inline-block;vertical-align:middle;'+(extraStyle||'')+'">'+(ICONS[name]||'')+'</svg>';
+}
+
+function defaultState(){
+  return {
+    screen:'phone', stack:['chats.list'], activeTab:'chats',
+    theme:'dark', language:'ru',
+    phoneDial:'+7', phoneCountry:'Россия', phoneNumber:'', codeDigits:'', pendingName:'',
+    user:{id:'me', name:'', bio:'', username:'', phone:'', birthday:'', avatar:null, deleted:false, frozen:false},
+    settings:{
+      privacy:{lastSeen:'everyone', phone:'contacts', birthday:'contacts'},
+      notifSound:true, notifPreview:true, powerSaving:false,
+      autoReply:false, autoReplyText:'Сейчас нет на месте, отвечу позже',
+      animations:true, wallpaper:'default'
+    },
+    stars:9, starEnergy:100,
+    contacts:{}, bots:{}, chats:{}, contactAvatarOverride:{}, folders:[], blocked:{},
+    currentChatId:null, currentContactId:null, currentGroupChatId:null,
+    replyTo:null, _chatSearchOpen:false, _chatSearchQuery:'', drafts:{}, botSpeed:'normal', aiStatus:'unknown', _contactFilter:'',
+    devices:[
+      {id:'thisdevice', name:'Этот телефон', sub:'NebulaGram Web • сейчас', current:true},
+      {id:'d2', name:'Windows, Chrome', sub:'Москва • 2 дня назад', current:false}
+    ],
+    spamTimestamps:[], activeFolder:'all', _chatFilter:''
+  };
+}
+let state = defaultState();
+let sheetEl=null, modalEl=null, saveTimer=null, engineLoopStarted=false, typingChats={};
+
+/* ===================== PERSONA POOLS ===================== */
+const NAME_POOL=['Артём','Максим','Соня','Лера','Данил','Кирилл','Вика','Настя','Богдан','Илья','Марина','Егор','Полина','Тимур','Алина','Гоша','Ева','Рома','Ксюша','Матвей','Злата','Никита','Юля','Саша','Дима','Оля','Стас','Люда','Женя','Костя'];
+const TRANSLIT={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+function translit(s){ return String(s).toLowerCase().split('').map(c=>TRANSLIT[c]!==undefined?TRANSLIT[c]:c).join(''); }
+const TRAITS=['обожает кофе и мемы','болеет за Спартак и смотрит каждый матч','учится на программиста','ведёт блог про путешествия','играет на гитаре по вечерам','работает курьером на самокате','коллекционирует наклейки и значки','смотрит аниме каждый день','занимается боксом три раза в неделю','любит готовить и постить еду','фанатеет от Dota 2','учит английский язык по вечерам','рисует комиксы в свободное время','разводит кактусы на подоконнике','обожает котиков и репостит их','слушает инди-музыку и ходит на концерты','увлекается фотографией на плёнку','постоянно опаздывает и извиняется за это'];
+const MOODS=['весёлый и любит шутить','немного саркастичный, но добрый','очень дружелюбный и открытый','спокойный и немногословный','энергичный и болтливый','застенчивый, но отзывчивый'];
+const GROUP_TITLES=['Кино вечер','Мемы 24/7','Готовим вместе','Флудилка','Котики и всё такое','Movie Club','Учёба и всё такое','Качалка','Путешествия','Ночной чат','Книжный клуб','Игры онлайн'];
+const AVATAR_COLORS=['#e17076','#7bc862','#65aadd','#a695e7','#ee7aae','#6ec9cb','#faa774','#4ea4f5'];
+
+function makeBot(){
+  const name=randOf(NAME_POOL);
+  const id=uid('bot');
+  return { id, name, username:translit(name)+Math.floor(100+Math.random()*899),
+    age:16+Math.floor(Math.random()*22), trait:randOf(TRAITS), mood:randOf(MOODS),
+    color:randOf(AVATAR_COLORS), avatar:null, status:'hidden', createdAt:Date.now(),
+    onlineNow:false, lastSeenAt:Date.now() };
+}
+
+/* ===================== ENTITY HELPERS ===================== */
+function isBotId(id){ return !!id && id.indexOf('bot')===0; }
+function getEntity(id){
+  if(id==='me') return state.user;
+  if(state.bots[id]) return state.bots[id];
+  if(state.contacts[id]) return state.contacts[id];
+  return null;
+}
+function displayName(id){
+  const e = getEntity(id);
+  if(!e) return '???';
+  if(id==='me') return e.deleted ? 'Удалённый аккаунт' : (e.name||'Без имени');
+  if(e.status==='deleted') return 'Удалённый аккаунт';
+  return e.name;
+}
+function entityAvatarUrl(id){
+  if(state.contactAvatarOverride[id]) return state.contactAvatarOverride[id];
+  const e=getEntity(id);
+  return e && e.avatar ? e.avatar : null;
+}
+function entityColor(id){
+  const e=getEntity(id);
+  if(e && e.color) return e.color;
+  let h=0; for(const c of String(id||'x')) h=(h*31+c.charCodeAt(0))%360;
+  return `hsl(${h},55%,50%)`;
+}
+function avatarHTML(id, size){
+  size=size||50;
+  const e=getEntity(id);
+  const deleted = e && ((id==='me' && e.deleted) || e.status==='deleted');
+  const url = deleted ? null : entityAvatarUrl(id);
+  const badge = e && e.status==='frozen' ? `<span class="badgeicon">${icon('snowflake',12)}</span>` : '';
+  if(url) return `<div class="avatar" style="width:${size}px;height:${size}px"><img src="${url}">${badge}</div>`;
+  const initial = deleted ? icon('block',Math.round(size*0.5)) : esc((displayName(id)||'?').trim().charAt(0).toUpperCase());
+  const bg = deleted ? '#5a636b' : entityColor(id);
+  return `<div class="avatar" style="width:${size}px;height:${size}px;background:${bg};font-size:${Math.round(size*0.4)}px">${initial}${badge}</div>`;
+}
+function timeStr(ts){ const d=new Date(ts); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
+function presenceLabel(bot){
+  if(!bot) return '';
+  if(bot.status==='deleted') return 'аккаунт удалён';
+  if(bot.status==='frozen') return 'аккаунт заморожен';
+  if(bot.onlineNow) return 'в сети';
+  const mins=Math.floor((Date.now()-(bot.lastSeenAt||bot.createdAt||Date.now()))/60000);
+  if(mins<2) return 'был(а) только что';
+  if(mins<60) return 'был(а) '+mins+' мин. назад';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24) return 'был(а) '+hrs+' ч. назад';
+  return 'был(а) недавно';
+}
+
+/* ===================== CHATS ===================== */
+function getSystemChat(create){
+  if(state.chats['sys']) return state.chats['sys'];
+  if(!create) return null;
+  const c={id:'sys', type:'system', title:'NebulaGram', messages:[], pinned:true, mutedUntil:0, unread:0};
+  state.chats['sys']=c; return c;
+}
+function sysNotice(text, iconKey){
+  const c=getSystemChat(true);
+  c.messages.push({id:uid('m'), senderId:'sys', text, iconKey, time:Date.now(), system:true});
+  if(state.currentChatId!=='sys') c.unread=(c.unread||0)+1;
+}
+function sysNoticeInChat(c, text, iconKey){ if(!c) return; c.messages.push({id:uid('m'), senderId:'sys', text, iconKey, time:Date.now(), system:true}); }
+function newPrivateChat(otherId){
+  const existing = Object.values(state.chats).find(c=>c.type==='private' && c.peerId===otherId);
+  if(existing) return existing;
+  const c={id:uid('chat'), type:'private', peerId:otherId, messages:[], mutedUntil:0, unread:0};
+  state.chats[c.id]=c; return c;
+}
+function chatTitle(c){ if(c.type==='private') return displayName(c.peerId); return c.title; }
+function chatLastMsg(c){ return c.messages[c.messages.length-1]; }
+function sortedChats(){
+  return Object.values(state.chats).sort((a,b)=>{
+    if(!!a.pinned!==!!b.pinned) return a.pinned? -1:1;
+    const ta=chatLastMsg(a)?chatLastMsg(a).time:0, tb=chatLastMsg(b)?chatLastMsg(b).time:0;
+    return tb-ta;
+  });
+}
+function entityColorForChat(c){ let h=0; for(const ch of String(c.id)) h=(h*31+ch.charCodeAt(0))%360; return `hsl(${h},50%,45%)`; }
+function chatIconHtml(c,size){ return c.type==='channel' ? icon('megaphone',size) : icon('users',size); }
+
+/* ===================== NAV ===================== */
+function go(view){ state.stack.push(view); render(); }
+function back(){ if(curView()==='chats.chat'){ state._chatSearchOpen=false; state._chatSearchQuery=''; if(recStart){ recStart=null; stopRecTimer(); } } if(state.stack.length>1) state.stack.pop(); closeSheet(); closeModal(); render(); }
+function curView(){ return state.stack[state.stack.length-1]; }
+function switchTab(tab){
+  state.activeTab=tab;
+  if(tab==='chats') state.stack=['chats.list'];
+  else if(tab==='contacts') state.stack=['contacts.list'];
+  else state.stack=['settings.root'];
+  render();
+}
+
+/* ===================== UI: toast / sheet / modal ===================== */
+function toast(msg){
+  const s=document.getElementById('phone');
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  s.appendChild(t);
+  setTimeout(()=>t.remove(), 2200);
+}
+function openSheet(title, items){
+  closeSheet();
+  const s=document.getElementById('phone');
+  const bd=document.createElement('div'); bd.className='sheet-backdrop';
+  bd.onclick=(e)=>{ if(e.target===bd) closeSheet(); };
+  const sh=document.createElement('div'); sh.className='sheet';
+  let html='';
+  if(title) html+=`<div style="padding:10px 20px 4px;font-size:13px;color:var(--text2);font-weight:600">${esc(title)}</div>`;
+  items.forEach((it,i)=>{ if(it.raw){ html+=it.html; return; } html+=`<div class="sitem ${it.danger?'danger':''}" onclick="__sheetAction(${i})">${it.icon?it.icon+' ':''}${esc(it.label)}</div>`; });
+  html+=`<div class="scancel" onclick="closeSheet()">Отмена</div>`;
+  sh.innerHTML=html;
+  bd.appendChild(sh); s.appendChild(bd); sheetEl={bd, items};
+}
+window.__sheetAction=function(i){ const it=sheetEl.items[i]; closeSheet(); if(it.onClick) it.onClick(); };
+function closeSheet(){ if(sheetEl){ sheetEl.bd.remove(); sheetEl=null; } }
+function openModal(html){
+  closeModal();
+  const s=document.getElementById('phone');
+  const bd=document.createElement('div'); bd.className='modal-backdrop';
+  bd.onclick=(e)=>{ if(e.target===bd) closeModal(); };
+  const box=document.createElement('div'); box.className='modalbox';
+  box.innerHTML=html;
+  bd.appendChild(box); s.appendChild(bd); modalEl=bd;
+  return box;
+}
+function closeModal(){ if(modalEl){ modalEl.remove(); modalEl=null; } }
+
+/* ===================== RENDER ===================== */
+function render(){
+  document.body.className = state.theme==='light' ? 'light':'';
+  const clockEl=document.getElementById('clock');
+  if(clockEl) clockEl.textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const content=document.getElementById('content');
+  const navslot=document.getElementById('navslot');
+  const fabhost=document.getElementById('fabhost');
+  let html='', showNav=false, fabHtml='';
+  if(state.screen==='phone') html=renderPhoneScreen();
+  else if(state.screen==='code') html=renderCodeScreen();
+  else if(state.screen==='profilesetup') html=renderProfileSetupScreen();
+  else if(state.screen==='deleted') html=renderDeletedScreen();
+  else {
+    showNav=true;
+    const v=curView();
+    if(v.indexOf('chats')===0) html=renderChatsArea(v);
+    else if(v.indexOf('contacts')===0) html=renderContactsArea(v);
+    else if(v.indexOf('settings')===0) html=renderSettingsArea(v);
+    if(v==='chats.list') fabHtml=`<div class="fab" onclick="newChatSheet()">${icon('plus',26)}</div>`;
+    else if(v==='contacts.list') fabHtml=`<div class="fab" onclick="openNewContactModal()">${icon('plus',26)}</div>`;
+  }
+  const ta0=document.getElementById('msginput'); const hadFocus=!!ta0 && document.activeElement===ta0;
+  if(ta0 && ta0.dataset.chat){ state.drafts[ta0.dataset.chat]=ta0.value; }
+  const viewKey=state.screen+'|'+(state.screen==='app'?curView()+'|'+(state.currentChatId||'')+'|'+(state.currentContactId||'')+'|'+(state.currentGroupChatId||''):'');
+  const prevTop=content.scrollTop, atBottom=(content.scrollHeight-content.scrollTop-content.clientHeight)<90, sameView=(viewKey===lastViewKey);
+  lastViewKey=viewKey;
+  content.innerHTML=html;
+  navslot.innerHTML = showNav?renderBottomNav():'';
+  fabhost.innerHTML = fabHtml;
+  if(state.screen==='code') focusHidden();
+  const ta=document.getElementById('msginput');
+  if(ta){ ta.value=state.drafts[state.currentChatId]||''; onMsgInput(ta); if(hadFocus) ta.focus(); }
+  if(showNav && curView()==='chats.chat'){ if(!sameView || atBottom || state._forceBottom) content.scrollTop=content.scrollHeight; else content.scrollTop=prevTop; }
+  else content.scrollTop = sameView ? prevTop : 0;
+  state._forceBottom=false;
+  scheduleSave();
+}
+function focusHidden(){ const h=document.getElementById('hidinput'); if(h) setTimeout(()=>h.focus(),40); }
+setInterval(()=>{ const el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }, 30000);
+
+/* ===================== ONBOARDING ===================== */
+function renderPhoneScreen(){
+  return `<div class="center-flow">
+    <div class="hero-emoji">${icon('phone',54)}</div>
+    <div class="flow-title">Номер телефона</div>
+    <div class="flow-sub">Проверьте код страны и введите свой номер телефона.</div>
+    <div class="field-row" onclick="pickCountry()"><span style="flex:1">${esc(state.phoneCountry)}</span><span class="chev">›</span></div>
+    <div class="field-row focus">
+      <span class="prefix">${esc(state.phoneDial)}</span>
+      <input id="phonenumfield" inputmode="numeric" placeholder="000 000-00-00" value="${esc(state.phoneNumber)}" oninput="onPhoneNumInput(this)" onkeydown="if(event.key==='Enter')submitPhone()">
+    </div>
+    <div class="rowbtns">
+      <button class="bigbtn ghost" onclick="toast('Демо: вход по ключу доступа недоступен')">${icon('key',16)} Ключ доступа</button>
+      <button class="bigbtn ghost" onclick="skipToProfile()">${icon('qrcode',16)} Вход по QR</button>
+    </div>
+    <div style="margin-top:20px;width:100%;">
+      <button class="bigbtn" id="phonenext" ${state.phoneNumber.length<5?'disabled':''} onclick="submitPhone()">Продолжить ${icon('chevleft',15,'transform:rotate(180deg)')}</button>
+    </div>
+  </div>`;
+}
+function onPhoneNumInput(el){
+  state.phoneNumber = el.value.replace(/[^0-9]/g,'');
+  el.value = state.phoneNumber;
+  const btn=document.getElementById('phonenext');
+  if(btn) btn.disabled = state.phoneNumber.length<5;
+}
+function pickCountry(){
+  openSheet('Страна', [
+    {label:'Россия +7', onClick:()=>{state.phoneCountry='Россия';state.phoneDial='+7';render();}},
+    {label:'Украина +380', onClick:()=>{state.phoneCountry='Украина';state.phoneDial='+380';render();}},
+    {label:'Казахстан +7', onClick:()=>{state.phoneCountry='Казахстан';state.phoneDial='+7';render();}},
+    {label:'США +1', onClick:()=>{state.phoneCountry='США';state.phoneDial='+1';render();}}
+  ]);
+}
+function submitPhone(){
+  if(state.phoneNumber.length<5) return;
+  state.user.phone = state.phoneDial+' '+state.phoneNumber;
+  state.screen='code'; state.codeDigits=''; render();
+}
+function skipToProfile(){
+  state.user.phone = state.phoneDial+' '+(state.phoneNumber||'000000000');
+  state.screen='profilesetup'; render();
+}
+function renderCodeScreen(){
+  let boxes='';
+  for(let i=0;i<5;i++){ const ch=state.codeDigits[i]; boxes+=`<div class="codebox ${ch?'filled':''}">${ch?esc(ch):''}</div>`; }
+  return `<div class="center-flow" onclick="focusHidden()">
+    <div class="hero-emoji">${icon('message',54)}</div>
+    <div class="flow-title">Введите код</div>
+    <div class="flow-sub">Мы отправили код на номер ${esc(state.user.phone)}</div>
+    <div class="codewrap">${boxes}</div>
+    <div class="flow-sub" style="margin-bottom:0">Демо-режим: подойдёт любой код из 5 цифр.</div>
+    <input id="hidinput" class="hiddeninput" inputmode="numeric" value="${esc(state.codeDigits)}" oninput="onCodeInput(this.value)">
+  </div>`;
+}
+function onCodeInput(v){
+  state.codeDigits = v.replace(/[^0-9]/g,'').slice(0,5);
+  render();
+  if(state.codeDigits.length===5){ setTimeout(()=>{ state.screen='profilesetup'; render(); }, 250); }
+}
+function renderProfileSetupScreen(){
+  return `<div class="center-flow">
+    <div class="hero-emoji">${icon('rocket',54)}</div>
+    <div class="flow-title">Ваше имя</div>
+    <div class="flow-sub">Как к вам обращаться в NebulaGram?</div>
+    <div class="avatar-picker">
+      <div class="av">${state.user.avatar?`<img src="${state.user.avatar}">`:icon('camera',30)}</div>
+      <label class="camera">${icon('camera',15)}<input type="file" accept="image/*" style="display:none" onchange="onProfileAvatarPick(event)"></label>
+    </div>
+    <div class="field-row focus"><input id="pnamefield" placeholder="Имя" value="${esc(state.pendingName)}" oninput="onPendingNameInput(this)"></div>
+    <div style="margin-top:8px;width:100%">
+      <button class="bigbtn" id="pnamebtn" ${state.pendingName.trim().length<1?'disabled':''} onclick="finishProfileSetup()">Готово ${icon('check',15)}</button>
+    </div>
+  </div>`;
+}
+function onPendingNameInput(el){
+  state.pendingName = el.value;
+  const btn=document.getElementById('pnamebtn');
+  if(btn) btn.disabled = state.pendingName.trim().length<1;
+}
+function onProfileAvatarPick(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ state.user.avatar=r.result; render(); };
+  r.readAsDataURL(f);
+}
+function finishProfileSetup(){
+  state.user.name=state.pendingName.trim();
+  state.user.username='user'+Math.floor(1000+Math.random()*9000);
+  state.screen='app'; state.activeTab='chats'; state.stack=['chats.list'];
+  render();
+  bootEngine();
+}
+function renderDeletedScreen(){
+  return `<div class="center-flow">
+    <div class="hero-emoji">${icon('block',54)}</div>
+    <div class="flow-title">Аккаунт удалён</div>
+    <div class="flow-sub">Другие пользователи теперь видят вас как «Удалённый аккаунт». На этом демо-сессия окончена.</div>
+    <button class="bigbtn" onclick="restartDemo()">Начать заново</button>
+  </div>`;
+}
+function restartDemo(){ engineLoopStarted=false; state=defaultState(); scheduleSave(); render(); }
+
+/* ===================== BOTTOM NAV ===================== */
+function renderBottomNav(){
+  const totalUnread=Object.values(state.chats).reduce((s,c)=>s+(c.unread||0),0);
+  return `<div class="bottomnav">
+    <div class="navitem ${state.activeTab==='chats'?'active':''}" onclick="switchTab('chats')"><div class="navicon">${icon('message',22)}</div>Чаты${totalUnread?`<div class="navbadge">${totalUnread>99?'99+':totalUnread}</div>`:''}</div>
+    <div class="navitem ${state.activeTab==='contacts'?'active':''}" onclick="switchTab('contacts')"><div class="navicon">${icon('user',22)}</div>Контакты</div>
+    <div class="navitem ${state.activeTab==='settings'?'active':''}" onclick="switchTab('settings')"><div class="navicon">${icon('gear',22)}</div>Настройки</div>
+    <div class="navitem ${state.activeTab==='me'?'active':''}" onclick="switchTab('me')"><div class="navavatar">${state.user.avatar?`<img src="${state.user.avatar}">`:icon('user',15)}</div>Профиль</div>
+  </div>`;
+}
+
+/* ===================== CHATS AREA ===================== */
+function renderChatsArea(v){
+  if(v==='chats.chat') return renderChatScreen();
+  if(v==='chats.groupinfo') return renderGroupInfo();
+  return renderChatsList();
+}
+function renderChatsList(){
+  const q=(state._chatFilter||'').toLowerCase();
+  let chats=sortedChats().filter(c=>{
+    if(state.activeFolder!=='all'){ const f=state.folders.find(f=>f.id===state.activeFolder); if(!f||!f.chatIds.includes(c.id)) return false; }
+    if(q) return chatMatches(c,q);
+    return true;
+  });
+  let folderHtml='';
+  if(state.folders.length){
+    folderHtml=`<div class="folderrow"><div class="folderpill ${state.activeFolder==='all'?'active':''}" onclick="state.activeFolder='all';render()">Все чаты</div>${state.folders.map(f=>`<div class="folderpill ${state.activeFolder===f.id?'active':''}" onclick="state.activeFolder='${f.id}';render()">${esc(f.name)}</div>`).join('')}</div>`;
+  }
+  let listHtml;
+  if(!chats.length){
+    listHtml = q ? `<div class="emptystate"><div class="em">${icon('search',52)}</div><div class="t1">Ничего не найдено</div></div>`
+      : `<div class="emptystate"><div class="em">${icon('message',52)}</div><div class="t1">Нет сообщений</div><div class="t2">Здесь будут ваши чаты. Пока можно создать группу, контакт или канал.</div></div>`;
+  } else {
+    listHtml = chats.map(c=>renderChatListItem(c,q)).join('');
+  }
+  return `<div class="topbar"><div class="title">Чаты</div></div>
+    <div class="searchbar"><input placeholder="Поиск" value="${esc(state._chatFilter)}" oninput="filterChats(this.value)"></div>
+    ${folderHtml}
+    <div id="chatlistwrap">${listHtml}</div>`;
+}
+function filterChats(v){
+  state._chatFilter=v;
+  const wrap=document.getElementById('chatlistwrap');
+  if(!wrap) return;
+  const q=v.toLowerCase();
+  let chats=sortedChats().filter(c=>{
+    if(state.activeFolder!=='all'){ const f=state.folders.find(f=>f.id===state.activeFolder); if(!f||!f.chatIds.includes(c.id)) return false; }
+    if(q) return chatMatches(c,q);
+    return true;
+  });
+  wrap.innerHTML = chats.length ? chats.map(c=>renderChatListItem(c,q)).join('') : `<div class="emptystate"><div class="em">${icon('search',52)}</div><div class="t1">Ничего не найдено</div></div>`;
+}
+function renderChatListItem(c,q){
+  let title, av;
+  if(c.type==='system'){ title='NebulaGram'; av=`<div class="avatar" style="width:50px;height:50px;background:#3d8fd9;font-size:22px">${icon('megaphone',20)}</div>`; }
+  else if(c.type==='private'){ title=displayName(c.peerId); av=avatarHTML(c.peerId,50); }
+  else { title=c.title; av=`<div class="avatar" style="width:50px;height:50px;background:${entityColorForChat(c)};font-size:20px">${chatIconHtml(c,22)}</div>`; }
+  const last=chatLastMsg(c);
+  let lastText;
+  if(typingChats[c.id]) lastText='печатает...';
+  else if(!last) lastText='Нет сообщений';
+  else if(last.system) lastText=last.text;
+  else lastText=(last.senderId==='me'?'Вы: ':(c.type!=='private'?displayName(last.senderId)+': ':''))+previewText(last);
+  if(q && !chatTitle(c).toLowerCase().includes(q)){ const hit=[...c.messages].reverse().find(m=>!m.system && previewText(m).toLowerCase().includes(q)); if(hit) lastText=(hit.senderId==='me'?'Вы':displayName(hit.senderId))+': '+previewText(hit); }
+  const deleted = c.type==='private' && state.bots[c.peerId] && state.bots[c.peerId].status==='deleted';
+  return `<div class="listitem" onclick="openChat('${c.id}')" oncontextmenu="event.preventDefault();openChatMenu('${c.id}')">
+    ${av}
+    <div class="li-mid">
+      <div class="li-top"><div class="li-name ${deleted?'deleted':''}">${esc(title)}</div><div class="li-time">${last?timeStr(last.time):''}</div></div>
+      <div class="li-bottom"><div class="li-msg">${esc(lastText)}</div>${c.unread?`<div class="li-unread">${c.unread}</div>`:(c.mutedUntil>Date.now()?'<span class="li-muted">'+icon('bellslash',13)+'</span>':'')}</div>
+    </div>
+  </div>`;
+}
+function openChat(id){
+  const c=state.chats[id]; if(!c) return;
+  state.currentChatId=id; c.unread=0;
+  go('chats.chat');
+}
+function openChatMenu(id){
+  const c=state.chats[id]; if(!c) return;
+  const items=[];
+  if(c.type!=='system'){
+    items.push({label:(c.pinned?'Открепить чат':'Закрепить чат'), icon:icon('pin',18), onClick:()=>{ c.pinned=!c.pinned; render(); }});
+    items.push({label:(c.mutedUntil>Date.now()?'Включить уведомления':'Отключить уведомления'), icon:icon('bellslash',18), onClick:()=>{ c.mutedUntil = c.mutedUntil>Date.now()?0:Date.now()+3.15e10; render(); }});
+  }
+  if(c.type!=='system'){
+    items.push({label:'Поиск по чату', icon:icon('search',18), onClick:()=>{ if(!(curView()==='chats.chat'&&state.currentChatId===id)){ state.currentChatId=id; c.unread=0; go('chats.chat'); } state._chatSearchOpen=false; toggleChatSearch(); }});
+    items.push({label:'Очистить историю', icon:icon('trash',18), onClick:()=>{ c.messages=[]; c.pinnedId=null; toast('История очищена'); render(); }});
+  }
+  if(c.type==='group'||c.type==='channel'){
+    items.push({label:'Информация о чате', icon:icon('info',18), onClick:()=>openGroupInfoFor(id)});
+    items.push({label:c.type==='channel'?'Покинуть канал':'Покинуть группу', icon:icon('logout',18), danger:true, onClick:()=>userLeaveChat(id)});
+  }
+  if(c.type!=='system'){
+    items.push({label:'Удалить чат', icon:icon('trash',18), danger:true, onClick:()=>{
+      delete state.chats[id];
+      if(state.currentChatId===id){ state.currentChatId=null; switchTab('chats'); } else render();
+      toast('Чат удалён');
+    }});
+  }
+  openSheet(chatTitle(c), items);
+}
+function userLeaveChat(id){
+  delete state.chats[id];
+  state.currentChatId=null;
+  switchTab('chats');
+  toast('Вы вышли из чата');
+}
+function newChatSheet(){
+  const items=[
+    {label:'Новая группа', icon:icon('users',20), onClick:()=>openNewGroupModal(false)},
+    {label:'Новый канал', icon:icon('megaphone',20), onClick:()=>openNewGroupModal(true)},
+    {label:'Новый контакт', icon:icon('user',20), onClick:()=>openNewContactModal()}
+  ];
+  if(Object.keys(state.contacts).length) items.unshift({label:'Написать контакту', icon:icon('edit',20), onClick:()=>openWriteContactSheet()});
+  openSheet('Создать', items);
+}
+function openWriteContactSheet(){
+  const items=Object.values(state.contacts).map(ct=>({label:ct.name, icon:icon('user',20), onClick:()=>{ const c=newPrivateChat(ct.id); state.currentChatId=c.id; go('chats.chat'); }}));
+  openSheet('Выберите контакт', items);
+}
+function openNewContactModal(){
+  openModal(`<div class="mtitle">Новый контакт</div>
+    <div class="formlabel" style="margin-left:0">Имя</div>
+    <input id="ncname" class="textinput" placeholder="Имя">
+    <div class="formlabel" style="margin-left:0">Телефон</div>
+    <input id="ncphone" class="textinput" placeholder="+7 900 000-00-00">
+    <div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Отмена</button><button class="bigbtn" onclick="createContact()">Создать</button></div>`);
+}
+function createContact(){
+  const name=document.getElementById('ncname').value.trim();
+  const phone=document.getElementById('ncphone').value.trim();
+  if(!name){ toast('Введите имя'); return; }
+  const id=uid('ct');
+  state.contacts[id]={id, name, phone, username:'', bio:'', birthday:'', avatar:null, isBot:false};
+  closeModal(); toast('Контакт добавлен');
+  switchTab('contacts');
+}
+function openNewGroupModal(isChannel){
+  const allMembers=[...Object.values(state.contacts), ...Object.values(state.bots).filter(b=>b.status==='active')];
+  openModal(`<div class="mtitle">${isChannel?'Новый канал':'Новая группа'}</div>
+    <div class="formlabel" style="margin-left:0">Название</div>
+    <input id="ngname" class="textinput" placeholder="${isChannel?'Название канала':'Название группы'}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
+      <span style="font-size:14px">Публичный (по ссылке)</span>
+      <div class="switch" id="ngpublic" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+    </div>
+    ${allMembers.length?`<div class="formlabel" style="margin-left:0">Участники</div><div>${allMembers.map(m=>`<label class="pickitem"><input type="checkbox" value="${m.id}" class="ngmember">${esc(m.name)}</label>`).join('')}</div>`:'<div class="hint">Пока нет контактов или ботов для добавления</div>'}
+    <div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Отмена</button><button class="bigbtn" onclick="createGroupOrChannel(${isChannel?'true':'false'})">Создать</button></div>`);
+}
+function createGroupOrChannel(isChannel){
+  const name=document.getElementById('ngname').value.trim();
+  if(!name){ toast('Введите название'); return; }
+  const isPublic=document.getElementById('ngpublic').classList.contains('on');
+  const members=Array.from(document.querySelectorAll('.ngmember:checked')).map(el=>el.value);
+  const id=uid('chat');
+  const chat={ id, type:isChannel?'channel':'group', title:name,
+    members:['me', ...members], admins:['me'], creatorId:'me', isPublic,
+    link: isPublic ? 'nebulagram.me/'+translit(name).replace(/[^a-z0-9]/g,'').slice(0,14)+Math.floor(Math.random()*90) : null,
+    messages:[], mutedUntil:0, unread:0 };
+  state.chats[id]=chat;
+  sysNoticeInChat(chat, (isChannel?'Канал':'Группа')+' «'+name+'» создан'+(isChannel?'':'а')+(isPublic?' • публичная ссылка активна':''));
+  closeModal(); toast((isChannel?'Канал':'Группа')+' создан'+(isChannel?'':'а'));
+  state.currentChatId=id; state.activeTab='chats'; state.stack=['chats.list','chats.chat']; render();
+}
+/* ===================== CHAT SCREEN ===================== */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let recStart=null, recTimer=null, aiFailAt=0, lastViewKey='';
+const REACTIONS=['like','heart','laugh','fire'];
+const botBusy={}, playing={};
+function findMsg(c,id){ return c.messages.find(m=>m.id===id); }
+function curChat(){ return state.chats[state.currentChatId]; }
+function isChatOpen(id){ return state.screen==='app' && curView()==='chats.chat' && state.currentChatId===id; }
+function fmtDur(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function plural(n){ const a=n%10,b=n%100; return (a===1&&b!==11)?'голос':((a>=2&&a<=4&&(b<10||b>=20))?'голоса':'голосов'); }
+function previewText(m){
+  if(m.system) return m.text;
+  if(m.poll) return 'Опрос: '+m.poll.q;
+  if(m.voice) return 'Голосовое сообщение';
+  if(m.gift) return 'Подарок';
+  if(m.image && !m.text) return 'Фото';
+  return (m.image?'Фото, ':'')+(m.text||'');
+}
+function hl(text){
+  const q=state._chatSearchOpen ? (state._chatSearchQuery||'').trim() : '';
+  if(!q) return esc(text);
+  const lo=text.toLowerCase(), ql=q.toLowerCase();
+  let out='', i=0;
+  while(true){ const j=lo.indexOf(ql,i); if(j<0){ out+=esc(text.slice(i)); break; } out+=esc(text.slice(i,j))+'<mark>'+esc(text.slice(j,j+q.length))+'</mark>'; i=j+q.length; }
+  return out;
+}
+function peerEntity(c){ return state.bots[c.peerId]||state.contacts[c.peerId]||null; }
+function peerReplyable(p){ return !!p && (p.status===undefined || p.status==='active'); }
+function disabledReason(c){
+  if(state.user.frozen) return 'Отправка недоступна';
+  if(c.type==='system') return 'Официальные уведомления';
+  if(c.type==='private'){
+    const p=state.bots[c.peerId];
+    if(p&&(p.status==='frozen'||p.status==='deleted')) return 'Отправка недоступна';
+    if(state.blocked[c.peerId]) return 'Пользователь заблокирован';
+  }
+  if(c.type==='channel' && !(c.admins||[]).includes('me')) return 'Писать в канал могут только админы';
+  return '';
+}
+function chatDisabled(c){ return !!disabledReason(c); }
+function onlineCount(c){ return (c.members||[]).filter(id=>id==='me' || (state.bots[id]&&state.bots[id].status==='active'&&state.bots[id].onlineNow)).length; }
+function renderVoice(m){
+  const wave=(m.voice.wave||[]).map(h=>'<i style="height:'+h+'px"></i>').join('');
+  return '<div class="voicebub" onclick="event.stopPropagation();playVoice(\''+m.id+'\')"><div class="vplay" id="vp_'+m.id+'">'+icon('play',16)+'</div><div class="vwave" id="vw_'+m.id+'">'+wave+'</div><span class="vdur">'+fmtDur(m.voice.dur)+'</span></div>';
+}
+function renderPoll(m){
+  const total=m.poll.opts.reduce((s,o)=>s+o.v.length,0);
+  const rows=m.poll.opts.map((o,i)=>{
+    const mine=o.v.includes('me'); const pct=total?Math.round(o.v.length/total*100):0;
+    return '<div class="pollopt '+(mine?'mine':'')+'" onclick="event.stopPropagation();votePoll(\''+m.id+'\','+i+')"><div class="pollbar" style="width:'+pct+'%"></div><span class="pollchk">'+(mine?icon('check',14):'')+'</span><span class="pollt">'+esc(o.t)+'</span><span class="pollpct">'+(total?pct+'%':'')+'</span></div>';
+  }).join('');
+  return '<div class="pollq">'+icon('poll',15,'margin-top:2px')+'<span>'+esc(m.poll.q)+'</span></div>'+rows+'<div class="pollmeta">'+total+' '+plural(total)+'</div>';
+}
+function renderMessage(m,c){
+  if(m.system) return '<div class="systemmsg" id="m_'+m.id+'">'+(m.iconKey?icon(m.iconKey,14,'margin-right:5px;'):'')+esc(m.text)+'</div>';
+  const out=m.senderId==='me';
+  const showName=c.type!=='private' && !out;
+  let b='';
+  if(showName) b+='<span class="sname">'+esc(displayName(m.senderId))+'</span>';
+  if(m.fwdFrom) b+='<div class="fwdlabel">'+icon('forward',13)+' Переслано от '+esc(m.fwdFrom)+'</div>';
+  if(m.replyToId){
+    const r=findMsg(c,m.replyToId);
+    b+= r ? '<div class="quoteblock" onclick="event.stopPropagation();jumpToMsg(\''+r.id+'\')"><span class="qname">'+esc(displayName(r.senderId))+'</span><div class="qtext">'+esc(previewText(r))+'</div></div>'
+          : '<div class="quoteblock"><div class="qtext">Сообщение удалено</div></div>';
+  }
+  if(m.image) b+='<img class="msgimg" src="'+m.image+'" onclick="event.stopPropagation();viewImage(\''+m.id+'\')">';
+  if(m.voice) b+=renderVoice(m);
+  if(m.poll) b+=renderPoll(m);
+  if(m.gift) b+='<div class="giftbub"><div class="gic">'+icon(m.gift.icon,24)+'</div><div>Подарок для вас!</div></div>';
+  else if(m.text) b+=hl(m.text);
+  const tick = out ? '<span class="readtick '+(m.read?'seen':'')+'">'+icon(m.read?'checkdouble':'check',13)+'</span>' : '';
+  b+='<span class="btime">'+(m.edited?'изменено ':'')+timeStr(m.time)+tick+'</span>';
+  const rx=m.reactions||{}; const keys=Object.keys(rx).filter(k=>rx[k].length);
+  if(keys.length) b+='<div class="reactrow">'+keys.map(k=>'<span class="reactpill '+(rx[k].includes('me')?'mine':'')+'" onclick="event.stopPropagation();reactMsg(\''+m.id+'\',\''+k+'\')">'+icon(k,13)+' '+rx[k].length+'</span>').join('')+'</div>';
+  return '<div class="msgrow '+(out?'out':'')+'" id="m_'+m.id+'"><div class="bubble '+(out?'out':'in')+'" onclick="msgTap(\''+m.id+'\')">'+b+'</div></div>';
+}
+function messagesHtml(c){
+  let h=c.messages.map(m=>renderMessage(m,c)).join('');
+  if(typingChats[c.id]) h+='<div class="typingind">'+esc(displayName(typingChats[c.id]))+' печатает...</div>';
+  return h || '<div class="hint" style="text-align:center">Нет сообщений. Напишите первым!</div>';
+}
+function renderChatScreen(){
+  const c=state.chats[state.currentChatId];
+  if(!c){ return renderChatsList(); }
+  if(state._chatSearchOpen && state._searchChat!==c.id){ state._chatSearchOpen=false; state._chatSearchQuery=''; }
+  let title, sub, avHtml, headerAttr='';
+  if(c.type==='system'){ title='NebulaGram'; sub='официальные уведомления'; avHtml='<div class="avatar" style="width:38px;height:38px;background:#3d8fd9;font-size:16px">'+icon('megaphone',18)+'</div>'; }
+  else if(c.type==='private'){
+    const bot=state.bots[c.peerId];
+    title=displayName(c.peerId);
+    if(typingChats[c.id]) sub='печатает...';
+    else if(bot) sub=presenceLabel(bot);
+    else sub=state.settings.privacy.lastSeen==='nobody'?'':'был(а) недавно';
+    avHtml=avatarHTML(c.peerId,38);
+    headerAttr='onclick="openContactOrBot(\''+c.peerId+'\')"';
+  } else {
+    title=c.title;
+    sub = typingChats[c.id] ? displayName(typingChats[c.id])+' печатает...' : (c.members?c.members.length:0)+' участник(ов), '+onlineCount(c)+' в сети';
+    avHtml='<div class="avatar" style="width:38px;height:38px;background:'+entityColorForChat(c)+';font-size:16px">'+chatIconHtml(c,18)+'</div>';
+    headerAttr='onclick="openGroupInfoFor(\''+c.id+'\')"';
+  }
+  const pm = c.pinnedId ? findMsg(c,c.pinnedId) : null;
+  const pinnedHtml = pm ? '<div class="pinnedbar" onclick="jumpToMsg(\''+pm.id+'\')">'+icon('pushpin',18,'color:var(--accent)')+'<div class="pb-mid"><div class="pb-label">Закреплённое сообщение</div><div class="pb-text">'+esc(previewText(pm))+'</div></div><span class="iconbtn" style="color:var(--text2)" onclick="event.stopPropagation();togglePin(\''+pm.id+'\')">'+icon('close',16)+'</span></div>' : '';
+  const searchHtml = state._chatSearchOpen ? '<div class="chatsearch"><input class="searchinput" id="csinput" placeholder="Поиск по чату" value="'+esc(state._chatSearchQuery)+'" oninput="chatSearch(this.value)"><span id="cscount" class="cscount">'+searchCountLabel(c)+'</span><span class="iconbtn" onclick="chatSearchStep(-1)">'+icon('chevleft',20,'transform:rotate(90deg)')+'</span><span class="iconbtn" onclick="chatSearchStep(1)">'+icon('chevleft',20,'transform:rotate(-90deg)')+'</span><span class="iconbtn" onclick="toggleChatSearch()">'+icon('close',20)+'</span></div>' : '';
+  const reason=disabledReason(c);
+  const rp = state.replyTo && state.replyTo.chatId===c.id ? findMsg(c,state.replyTo.msgId) : null;
+  const replyHtml = rp ? '<div class="replybar"><div class="rb-line"></div><div class="rb-mid"><div class="rb-name">'+esc(displayName(rp.senderId))+'</div><div class="rb-text">'+esc(previewText(rp))+'</div></div><span class="rb-close" onclick="cancelReply()">'+icon('close',18)+'</span></div>' : '';
+  let bar;
+  if(recStart){
+    bar='<div class="inputbar rec"><span class="iconbtn" style="color:var(--danger)" onclick="cancelRecord()">'+icon('trash',22)+'</span><div class="recdot"></div><div id="rectime" class="rectime">'+fmtDur((Date.now()-recStart)/1000)+'</div><div class="sendbtn" onclick="finishRecord()">'+icon('send',17)+'</div></div>';
+  } else if(c.type==='channel' && reason==='Писать в канал могут только админы'){
+    bar='<div class="inputbar" style="justify-content:center;color:var(--text2);font-size:13px;padding:14px">'+esc(reason)+'</div>';
+  } else {
+    bar='<div class="inputbar"><span class="iconbtn attachbtn" style="color:var(--text2);padding:9px 2px" onclick="attachSheet()">'+icon('attach',22)+'</span><textarea id="msginput" data-chat="'+c.id+'" rows="1" placeholder="'+esc(reason||'Сообщение')+'" '+(reason?'disabled':'')+' oninput="onMsgInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea><div class="sendbtn" id="sendbtn" style="display:none" onclick="sendMessage()">'+icon('send',17)+'</div><div class="sendbtn" id="micbtn" onclick="startRecord()">'+icon('mic',18)+'</div></div>';
+  }
+  return '<div class="topbar"><span class="back" onclick="back()">‹</span><div class="titlewrap" style="flex-direction:row;align-items:center;gap:8px;cursor:pointer" '+headerAttr+'>'+avHtml+'<div style="display:flex;flex-direction:column;min-width:0"><div class="title">'+esc(title)+'</div><div class="sub">'+esc(sub)+'</div></div></div><div class="actions"><span class="iconbtn" onclick="toggleChatSearch()">'+icon('search',22)+'</span><span class="iconbtn" onclick="openChatMenu(\''+c.id+'\')">'+icon('dotsv',22)+'</span></div></div>'
+    + searchHtml + pinnedHtml
+    + (state.user.frozen?'<div class="banner">'+icon('snowflake',16)+' Ваш аккаунт заморожен за подозрение в спам-активности. Отправка сообщений недоступна.<div class="btn" onclick="appealFreeze()">Подать апелляцию</div></div>':'')
+    + '<div class="messages">'+messagesHtml(c)+'</div>'
+    + replyHtml + bar;
+}
+function onMsgInput(el){
+  const has=el.value.trim().length>0;
+  const sb=document.getElementById('sendbtn'), mb=document.getElementById('micbtn');
+  if(sb) sb.style.display=has?'flex':'none';
+  if(mb) mb.style.display=has?'none':'flex';
+  el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px';
+}
+function jumpToMsg(id){
+  const el=document.getElementById('m_'+id); if(!el) return;
+  el.scrollIntoView({block:'center',behavior:'smooth'});
+  el.classList.add('msg-hl'); setTimeout(()=>el.classList.remove('msg-hl'),1500);
+}
+/* ---- in-chat search ---- */
+function searchMatches(c){ const q=(state._chatSearchQuery||'').trim().toLowerCase(); if(!q) return []; return c.messages.filter(m=>!m.system && previewText(m).toLowerCase().includes(q)).map(m=>m.id); }
+function searchCountLabel(c){ if(!(state._chatSearchQuery||'').trim()) return ''; const ms=searchMatches(c); return ms.length ? (((state._searchIdx||0)%ms.length)+1)+'/'+ms.length : '0'; }
+function toggleChatSearch(){
+  state._chatSearchOpen=!state._chatSearchOpen; state._chatSearchQuery=''; state._searchIdx=0; state._searchChat=state.currentChatId;
+  render(); if(state._chatSearchOpen) setTimeout(()=>{ const i=document.getElementById('csinput'); if(i) i.focus(); },60);
+}
+function chatSearch(v){
+  const c=curChat(); if(!c) return;
+  state._chatSearchQuery=v;
+  const ms=searchMatches(c); state._searchIdx=Math.max(0,ms.length-1);
+  const box=document.querySelector('.messages'); if(box) box.innerHTML=messagesHtml(c);
+  const cnt=document.getElementById('cscount'); if(cnt) cnt.textContent=searchCountLabel(c);
+  if(ms.length) jumpToMsg(ms[state._searchIdx]);
+}
+function chatSearchStep(d){
+  const c=curChat(); if(!c) return; const ms=searchMatches(c); if(!ms.length) return;
+  state._searchIdx=(((state._searchIdx||0)+d)%ms.length+ms.length)%ms.length;
+  const cnt=document.getElementById('cscount'); if(cnt) cnt.textContent=searchCountLabel(c);
+  jumpToMsg(ms[state._searchIdx]);
+}
+/* ---- message actions ---- */
+function msgTap(id){
+  const c=curChat(); if(!c) return;
+  const m=findMsg(c,id); if(!m||m.system) return;
+  const out=m.senderId==='me';
+  const items=[{raw:true, html:'<div class="reactpick">'+REACTIONS.map(k=>'<span onclick="closeSheet();reactMsg(\''+id+'\',\''+k+'\')">'+icon(k,26)+'</span>').join('')+'</div>'}];
+  if(!chatDisabled(c)) items.push({label:'Ответить', icon:icon('reply',18), onClick:()=>startReply(id)});
+  if(m.text) items.push({label:'Копировать', icon:icon('copy',18), onClick:()=>copyText(m.text)});
+  items.push({label:'Переслать', icon:icon('forward',18), onClick:()=>forwardSheet(id)});
+  items.push({label:c.pinnedId===id?'Открепить':'Закрепить', icon:icon('pushpin',18), onClick:()=>togglePin(id)});
+  if(out && m.text && !m.poll && !m.voice && !m.gift) items.push({label:'Изменить', icon:icon('edit',18), onClick:()=>editMsg(id)});
+  items.push({label:'Удалить', icon:icon('trash',18), danger:true, onClick:()=>deleteMsg(id)});
+  openSheet(null, items);
+}
+function applyReaction(m,key,who){
+  m.reactions=m.reactions||{};
+  const had=(m.reactions[key]||[]).includes(who);
+  Object.keys(m.reactions).forEach(k=>{ m.reactions[k]=m.reactions[k].filter(x=>x!==who); });
+  if(!had) m.reactions[key]=(m.reactions[key]||[]).concat(who);
+  Object.keys(m.reactions).forEach(k=>{ if(!m.reactions[k].length) delete m.reactions[k]; });
+}
+function reactMsg(id,key){ const c=curChat(); if(!c) return; const m=findMsg(c,id); if(!m) return; applyReaction(m,key,'me'); render(); }
+function botReact(chat,bot){
+  const mine=[...chat.messages].reverse().find(m=>m.senderId==='me' && !m.system);
+  if(mine){ applyReaction(mine, randOf(REACTIONS), bot.id); }
+}
+function startReply(id){ state.replyTo={chatId:state.currentChatId,msgId:id}; render(); setTimeout(()=>{ const t=document.getElementById('msginput'); if(t) t.focus(); },60); }
+function cancelReply(){ state.replyTo=null; render(); }
+function replyId(){ return (state.replyTo && state.replyTo.chatId===state.currentChatId) ? state.replyTo.msgId : undefined; }
+function copyText(t){ try{ navigator.clipboard.writeText(t).then(()=>toast('Скопировано'),()=>toast('Не удалось скопировать')); }catch(e){ toast('Не удалось скопировать'); } }
+function togglePin(id){ const c=curChat(); if(!c) return; c.pinnedId = c.pinnedId===id ? null : id; toast(c.pinnedId?'Сообщение закреплено':'Сообщение откреплено'); render(); }
+function deleteMsg(id){
+  const c=curChat(); if(!c) return;
+  c.messages=c.messages.filter(m=>m.id!==id);
+  if(c.pinnedId===id) c.pinnedId=null;
+  if(state.replyTo && state.replyTo.msgId===id) state.replyTo=null;
+  toast('Сообщение удалено'); render();
+}
+function editMsg(id){
+  const c=curChat(); const m=c&&findMsg(c,id); if(!m) return;
+  openModal('<div class="mtitle">Изменить сообщение</div><textarea id="editta" class="textinput" rows="4">'+esc(m.text)+'</textarea><div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Отмена</button><button class="bigbtn" onclick="saveEdit(\''+id+'\')">Сохранить</button></div>');
+}
+function saveEdit(id){
+  const c=curChat(); const m=c&&findMsg(c,id); if(!m) return;
+  const v=document.getElementById('editta').value.trim(); if(!v){ toast('Сообщение не может быть пустым'); return; }
+  if(v!==m.text){ m.text=v; m.edited=true; }
+  closeModal(); render();
+}
+function forwardSheet(id){
+  const src=curChat(); const m=src&&findMsg(src,id); if(!m) return;
+  if(m.poll){ toast('Опрос нельзя переслать'); return; }
+  const items=[];
+  Object.values(state.chats).filter(c=>c.type!=='system' && c.id!==src.id && !chatDisabled(c)).forEach(c=>{
+    items.push({label:chatTitle(c), icon:icon(c.type==='private'?'user':(c.type==='channel'?'megaphone':'users'),18), onClick:()=>doForward(m,c)});
+  });
+  Object.values(state.contacts).filter(ct=>!Object.values(state.chats).some(c=>c.type==='private'&&c.peerId===ct.id) && !state.blocked[ct.id]).forEach(ct=>{
+    items.push({label:ct.name, icon:icon('user',18), onClick:()=>doForward(m,newPrivateChat(ct.id))});
+  });
+  if(!items.length){ toast('Некому пересылать'); return; }
+  openSheet('Переслать в...', items);
+}
+function doForward(m,target){
+  target.messages.push({id:uid('m'), senderId:'me', time:Date.now(), fwdFrom:m.fwdFrom||displayName(m.senderId), text:m.text||'', image:m.image, voice:m.voice, gift:m.gift, read:false});
+  toast('Переслано: '+chatTitle(target)); render();
+}
+function viewImage(id){
+  const c=curChat(); const m=c&&findMsg(c,id); if(!m||!m.image) return;
+  openModal('<img src="'+m.image+'" style="width:100%;border-radius:12px;display:block"><div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Закрыть</button></div>');
+}
+/* ---- attach / photo / poll / voice ---- */
+function attachSheet(){
+  const c=curChat(); if(!c) return;
+  if(chatDisabled(c)){ toast(disabledReason(c)); return; }
+  openSheet('Прикрепить', [
+    {label:'Фото', icon:icon('image',20), onClick:pickPhoto},
+    {label:'Опрос', icon:icon('poll',20), onClick:openPollModal}
+  ]);
+}
+function pickPhoto(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ const img=new Image(); img.onload=()=>{
+      const k=Math.min(1,640/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas'); cv.width=Math.max(1,Math.round(img.width*k)); cv.height=Math.max(1,Math.round(img.height*k));
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      sendPhoto(cv.toDataURL('image/jpeg',0.72));
+    }; img.src=r.result; };
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+function sendPhoto(url){
+  const c=curChat(); if(!c||chatDisabled(c)) return;
+  const m={id:uid('m'), senderId:'me', time:Date.now(), image:url, text:'', read:false, replyToId:replyId()};
+  c.messages.push(m); state.replyTo=null; afterUserMessage(c,m);
+}
+function openPollModal(){
+  openModal('<div class="mtitle">Новый опрос</div><input id="pollq" class="textinput" placeholder="Вопрос" style="margin-bottom:10px">'+[1,2,3,4].map(i=>'<input class="textinput pollin" placeholder="Вариант '+i+(i<3?'':' (необязательно)')+'" style="margin-bottom:8px">').join('')+'<div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Отмена</button><button class="bigbtn" onclick="createPoll()">Создать</button></div>');
+}
+function createPoll(){
+  const q=document.getElementById('pollq').value.trim();
+  const opts=Array.from(document.querySelectorAll('.pollin')).map(i=>i.value.trim()).filter(Boolean);
+  if(!q||opts.length<2){ toast('Нужны вопрос и минимум 2 варианта'); return; }
+  const c=curChat(); if(!c||chatDisabled(c)) return;
+  closeModal();
+  const m={id:uid('m'), senderId:'me', time:Date.now(), poll:{q, opts:opts.map(t=>({t,v:[]}))}, read:false};
+  c.messages.push(m); afterUserMessage(c,m,{noBotReply:true});
+  const voters=(c.type==='private'?[c.peerId]:(c.members||[])).filter(id=>isBotId(id)&&state.bots[id]&&state.bots[id].status==='active');
+  voters.forEach(id=>{ if(Math.random()<0.85) setTimeout(()=>{
+    const mm=state.chats[c.id]&&findMsg(c,m.id); if(!mm) return;
+    mm.poll.opts.forEach(o=>{ o.v=o.v.filter(x=>x!==id); });
+    randOf(mm.poll.opts).v.push(id); markPresence(state.bots[id],true); render();
+  }, 3000+Math.random()*20000); });
+}
+function votePoll(id,idx){
+  const c=curChat(); const m=c&&findMsg(c,id); if(!m||!m.poll) return;
+  const was=m.poll.opts[idx].v.includes('me');
+  m.poll.opts.forEach(o=>{ o.v=o.v.filter(x=>x!=='me'); });
+  if(!was) m.poll.opts[idx].v.push('me');
+  render();
+}
+function startRecord(){
+  const c=curChat(); if(!c) return;
+  if(chatDisabled(c)){ toast(disabledReason(c)); return; }
+  recStart=Date.now();
+  recTimer=setInterval(()=>{ const el=document.getElementById('rectime'); if(el) el.textContent=fmtDur((Date.now()-recStart)/1000); },500);
+  render();
+}
+function stopRecTimer(){ clearInterval(recTimer); recTimer=null; }
+function cancelRecord(){ recStart=null; stopRecTimer(); render(); }
+function finishRecord(){
+  const c=curChat(); const dur=Math.round((Date.now()-recStart)/1000);
+  recStart=null; stopRecTimer();
+  if(!c||dur<1){ render(); toast('Слишком короткое сообщение'); return; }
+  const wave=[]; for(let i=0;i<28;i++) wave.push(4+Math.floor(Math.random()*16));
+  const m={id:uid('m'), senderId:'me', time:Date.now(), voice:{dur, wave}, read:false, replyToId:replyId()};
+  c.messages.push(m); state.replyTo=null; afterUserMessage(c,m);
+}
+function playVoice(id){
+  const btn=document.getElementById('vp_'+id), wave=document.getElementById('vw_'+id); if(!btn||!wave) return;
+  const c=curChat(); const m=c&&findMsg(c,id); if(!m) return;
+  const bars=wave.querySelectorAll('i');
+  if(playing[id]){ clearInterval(playing[id]); delete playing[id]; btn.innerHTML=icon('play',16); bars.forEach(i=>i.classList.remove('on')); return; }
+  let k=0; btn.innerHTML=icon('pause',16);
+  playing[id]=setInterval(()=>{
+    if(!document.body.contains(btn)){ clearInterval(playing[id]); delete playing[id]; return; }
+    if(k<bars.length){ bars[k].classList.add('on'); k++; }
+    else { clearInterval(playing[id]); delete playing[id]; btn.innerHTML=icon('play',16); bars.forEach(i=>i.classList.remove('on')); }
+  }, (m.voice.dur*1000)/bars.length);
+}
+/* ---- sending ---- */
+function checkFlood(){
+  const now=Date.now();
+  state.spamTimestamps.push(now);
+  state.spamTimestamps=state.spamTimestamps.filter(t=>now-t<4000);
+  if(state.spamTimestamps.length>=6){ freezeUser(); return true; }
+  return false;
+}
+function sendMessage(){
+  const ta=document.getElementById('msginput'); if(!ta) return;
+  const text=ta.value.trim(); if(!text) return;
+  const chat=curChat(); if(!chat) return;
+  if(chatDisabled(chat)){ toast(disabledReason(chat)); return; }
+  if(checkFlood()){ ta.value=''; state.drafts[chat.id]=''; return; }
+  const m={id:uid('m'), senderId:'me', text, time:Date.now(), read:false, replyToId:replyId()};
+  chat.messages.push(m);
+  ta.value=''; state.drafts[chat.id]=''; state.replyTo=null;
+  afterUserMessage(chat,m);
+}
+function afterUserMessage(chat,m,opts){
+  opts=opts||{};
+  state._forceBottom=true;
+  render();
+  if(opts.noBotReply) return;
+  if(chat.type==='private'){
+    const peer=peerEntity(chat);
+    if(peer && !state.bots[peer.id]) ensurePersona(peer);
+    if(peerReplyable(peer) && !state.blocked[peer.id]) triggerBotReply(chat,peer);
+  } else if(chat.type==='group'){ maybeGroupBotReply(chat,m); }
+}
+function ensurePersona(p){
+  if(p.trait) return;
+  p.age=16+Math.floor(Math.random()*22); p.trait=randOf(TRAITS); p.mood=randOf(MOODS);
+  if(!p.username) p.username=translit(p.name||'user')+Math.floor(10+Math.random()*89);
+}
+function freezeUser(){
+  state.user.frozen=true;
+  sysNotice('Обнаружена подозрительная активность (слишком много сообщений подряд). Ваш аккаунт временно заморожен.','warning');
+  toast('Аккаунт заморожен за спам');
+  render();
+}
+function appealFreeze(){
+  toast('Апелляция отправлена...');
+  setTimeout(()=>{
+    state.user.frozen=false;
+    sysNotice('Апелляция одобрена. Аккаунт разморожен.','check');
+    toast('Аккаунт разморожен');
+    render();
+  }, 4000);
+}
+/* ===================== AI CORE ===================== */
+async function callClaude(system, messages, maxTokens){
+  const resp=await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({model:'claude-sonnet-4-6', max_tokens:maxTokens||220, system, messages})
+  });
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  const data=await resp.json();
+  if(data.error) throw new Error(data.error.message||'api error');
+  const t=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+  if(!t) throw new Error('empty response');
+  return t;
+}
+function msgToText(m){
+  if(m.system) return null;
+  if(m.poll) return '[опрос: '+m.poll.q+' — варианты: '+m.poll.opts.map(o=>o.t).join(', ')+']';
+  if(m.voice) return '[голосовое сообщение, '+m.voice.dur+' сек; ты не можешь его прослушать прямо сейчас]';
+  if(m.gift) return '[подарок]';
+  let t=m.text||'';
+  if(m.image) t='[фото] '+t;
+  if(m.fwdFrom) t='(пересланное от '+m.fwdFrom+') '+t;
+  return t.trim();
+}
+function personaSystemPrompt(bot, chat, opts){
+  opts=opts||{};
+  const lang = state.language==='en' ? 'Reply in English.' : 'Отвечай на русском языке.';
+  const u=state.user;
+  const age=bot.age||22, trait=bot.trait||'обычный человек со своими делами и интересами', mood=bot.mood||'дружелюбный';
+  const uname=bot.username||translit(bot.name||'user');
+  let ctx='';
+  if(chat && chat.type==='private') ctx='Ты переписываешься лично с пользователем по имени '+(u.name||'без имени')+(u.bio?' (в профиле у него написано: «'+u.bio+'»)':'')+'.';
+  else if(chat) ctx='Ты в '+(chat.type==='channel'?'канале':'групповом чате')+' «'+chat.title+'». Участники: '+(chat.members||[]).map(displayName).filter(n=>n!==bot.name).join(', ')+'. Можно обращаться к людям по имени.';
+  const extra=[];
+  if(opts.opener) extra.push('Ты сам(а) первым пишешь этому человеку в личку: познакомься или найди естественный повод (общий чат, интересы). Одно короткое сообщение, без банального «привет, как дела».');
+  if(opts.channelPost) extra.push('Ты автор канала: пиши пост от первого лица — мысль, новость из твоей жизни или мнение по твоей теме, 1–3 коротких предложения.');
+  return 'Ты — '+bot.name+' (@'+uname+'), тебе '+age+' лет, ты живой человек в мессенджере. Твои интересы и черты: '+trait+'. Твой характер: '+mood+'. Сейчас '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'. '+ctx+' '+lang+'\n'
+   +'Правила: пиши как настоящий человек в чате — коротко (обычно одно предложение, максимум два), неформально, иногда без заглавной буквы и точки. Отвечай именно по смыслу последних сообщений, помни всё сказанное раньше, задавай встречные вопросы, когда уместно, имей своё мнение и вкусы, можешь спорить и шутить. Не используй эмодзи, списки, markdown и кавычки, не начинай с собственного имени, не повторяй уже сказанные фразы и не здоровайся заново. Не упоминай без необходимости, что ты программа, оставайся в роли. Если пришло фото — отреагируй на то, что реально на нём видно. Если пришло голосовое — скажи, что не можешь послушать сейчас, и попроси написать текстом. '+extra.join(' ');
+}
+function buildAiMessages(bot, chat, opts){
+  opts=opts||{};
+  const hist=chat.messages.filter(m=>!m.system).slice(-24);
+  if(chat.type==='private'){
+    const out=[];
+    hist.forEach(m=>{
+      const role=m.senderId===bot.id?'assistant':'user';
+      const txt=msgToText(m); if(txt==null) return;
+      const last=out[out.length-1];
+      if(last && last.role===role) last.content+='\n'+txt; else out.push({role, content:txt});
+    });
+    if(!out.length || out[0].role!=='user') out.unshift({role:'user', content:'(вы только что начали переписку)'});
+    if(out[out.length-1].role!=='user') out.push({role:'user', content:'(продолжи разговор сам(а))'});
+    const lastImg=[...hist].reverse().slice(0,3).find(m=>m.image && m.senderId!==bot.id);
+    if(lastImg){
+      const mm=/^data:(image\/[a-z+]+);base64,(.+)$/.exec(lastImg.image);
+      const lm=out[out.length-1];
+      if(mm && lm.role==='user' && typeof lm.content==='string' && lm.content.indexOf('[фото]')>=0){
+        lm.content=[{type:'image', source:{type:'base64', media_type:mm[1], data:mm[2]}}, {type:'text', text:lm.content}];
+      }
+    }
+    return out;
+  }
+  const transcript=hist.map(m=>displayName(m.senderId)+(m.senderId===bot.id?' (это ты)':'')+': '+msgToText(m)).join('\n');
+  const instr = opts.channelPost
+    ? 'Напиши новый пост для своего канала «'+chat.title+'». Только текст поста.'
+    : 'Последние сообщения в чате:\n'+(transcript||'(пока пусто — начни разговор на свою тему)')+'\n\nНапиши свою следующую реплику в чате от лица '+bot.name+'. Только текст сообщения.';
+  return [{role:'user', content:instr}];
+}
+function cleanReply(t,bot){
+  t=String(t||'').trim();
+  const nm=String(bot.name||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  if(nm) t=t.replace(new RegExp('^'+nm+'\\s*[:\\-—]\\s*','i'),'');
+  t=t.replace(/^["«“]+|["»”]+$/g,'');
+  t=t.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu,'').replace(/[ \t]{2,}/g,' ').trim();
+  if(t.length>420) t=t.slice(0,420);
+  return t;
+}
+async function generateBotMessage(bot, chat, opts){
+  opts=opts||{};
+  const sys=personaSystemPrompt(bot,chat,opts);
+  const messages=buildAiMessages(bot,chat,opts);
+  for(let attempt=0; attempt<2; attempt++){
+    try{
+      const raw=await callClaude(sys,messages,220);
+      const clean=cleanReply(raw,bot);
+      if(clean){ state.aiStatus='ok'; return clean; }
+    }catch(e){ console.error('ai error', e); if(attempt===0) await sleep(900); }
+  }
+  state.aiStatus='fail';
+  return null;
+}
+function aiFail(){ const now=Date.now(); if(now-aiFailAt>25000){ aiFailAt=now; toast('ИИ ботов недоступен, попробуйте позже'); } }
+function markPresence(bot,on){ if(!bot) return; bot.onlineNow=!!on; bot.lastSeenAt=Date.now(); }
+function markRead(chat){ chat.messages.forEach(m=>{ if(m.senderId==='me') m.read=true; }); }
+async function triggerBotReply(chat, bot){
+  if(state.user.deleted || state.blocked[bot.id]) return;
+  const key=chat.id+'|'+bot.id;
+  if(botBusy[key]){ botBusy[key]='again'; return; }
+  botBusy[key]=true;
+  try{
+    await sleep(700+Math.random()*1300);
+    if(!state.chats[chat.id] || (bot.status && bot.status!=='active') || state.blocked[bot.id]) return;
+    markPresence(bot,true); markRead(chat);
+    if(Math.random()<0.18) botReact(chat,bot);
+    typingChats[chat.id]=bot.id; render();
+    const t0=Date.now();
+    const text=await generateBotMessage(bot,chat);
+    if(text){ const need=Math.min(2600,text.length*40)-(Date.now()-t0); if(need>0) await sleep(need); }
+    delete typingChats[chat.id];
+    if(!state.chats[chat.id]) return;
+    if(!text){ aiFail(); render(); return; }
+    chat.messages.push({id:uid('m'), senderId:bot.id, text, time:Date.now()});
+    if(!isChatOpen(chat.id)) chat.unread=(chat.unread||0)+1;
+    playNotifSound(); render();
+  } finally {
+    delete typingChats[chat.id];
+    const again=botBusy[key]==='again'; delete botBusy[key];
+    if(again) triggerBotReply(chat,bot);
+  }
+}
+function maybeGroupBotReply(chat,m){
+  const members=(chat.members||[]).filter(id=>isBotId(id)&&state.bots[id]&&state.bots[id].status==='active'&&!state.blocked[id]);
+  if(!members.length) return;
+  const txt=((m&&m.text)||'').toLowerCase();
+  let chosen=members.filter(id=>{ const b=state.bots[id]; return txt.includes('@'+b.username.toLowerCase()) || txt.includes(b.name.toLowerCase()); }).slice(0,2);
+  if(!chosen.length && m && m.replyToId){ const r=findMsg(chat,m.replyToId); if(r && members.includes(r.senderId)) chosen=[r.senderId]; }
+  if(!chosen.length){
+    if(Math.random()>0.8) return;
+    chosen=[randOf(members)];
+    if(members.length>1 && Math.random()<0.25) chosen.push(randOf(members.filter(x=>x!==chosen[0])));
+  }
+  chosen.forEach((id,i)=>setTimeout(()=>triggerBotReply(chat,state.bots[id]), i*3000));
+}
+
+function chatMatches(c,q){ if(chatTitle(c).toLowerCase().includes(q)) return true; return c.messages.some(m=>!m.system && previewText(m).toLowerCase().includes(q)); }
+
+/* ---- Group / channel info ---- */
+function openGroupInfoFor(id){ state.currentGroupChatId=id; go('chats.groupinfo'); }
+function renderGroupInfo(){
+  const c=state.chats[state.currentGroupChatId];
+  if(!c) return renderChatsList();
+  const members=(c.members||[]).map(id=>{
+    const isOwner=c.creatorId===id;
+    const isAdmin=(c.admins||[]).includes(id);
+    const e=getEntity(id);
+    const frozen=e && e.status==='frozen';
+    const roleTag=isOwner?'<span class="rolebadge owner">Создатель</span>':(isAdmin?'<span class="rolebadge admin">Админ</span>':'');
+    return `<div class="row" onclick="memberActionSheet('${c.id}','${id}')">
+      ${avatarHTML(id,38)}
+      <div class="rtxt"><div class="rmain">${esc(displayName(id))}</div></div>
+      ${frozen?'<span class="rolebadge frozen">Заморожен</span>':''} ${roleTag}
+    </div>`;
+  }).join('');
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Информация</div></div>
+    <div class="profilehead">
+      <div class="avatar" style="width:90px;height:90px;background:${entityColorForChat(c)};font-size:34px">${chatIconHtml(c,32)}</div>
+      <div class="pname">${esc(c.title)}</div>
+      <div class="psub">${c.type==='channel'?'Канал':'Группа'} • ${(c.members||[]).length} участник(ов)</div>
+    </div>
+    ${c.isPublic?`<div class="section"><div class="row" onclick="copyInviteLink('${c.id}')"><span class="ric">${icon('link',20)}</span><div class="rtxt"><div class="rmain">https://${esc(c.link)}</div><div class="rsub">Нажмите, чтобы скопировать</div></div></div></div>`:`<div class="hint">Приватный чат — новые участники добавляются только по приглашению.</div>`}
+    <div class="section">
+      <div class="h">УЧАСТНИКИ (${(c.members||[]).length})</div>
+      ${members}
+      <div class="row" onclick="addMemberSheet('${c.id}')"><span class="ric">${icon('plus',20)}</span><div class="rtxt"><div class="rmain">Добавить участника</div></div></div>
+    </div>
+    <div class="section"><div class="row danger" onclick="userLeaveChat('${c.id}')"><span class="ric">${icon('logout',20)}</span><div class="rtxt"><div class="rmain">${c.type==='channel'?'Покинуть канал':'Покинуть группу'}</div></div></div></div>`;
+}
+function copyInviteLink(id){ toast('Ссылка скопирована: https://'+state.chats[id].link); }
+function memberActionSheet(chatId, memberId){
+  const c=state.chats[chatId];
+  if(memberId==='me'){ toast('Это вы'); return; }
+  const isAdmin=(c.admins||[]).includes(memberId);
+  openSheet(displayName(memberId), [
+    {label:'Смотреть профиль', icon:icon('user',20), onClick:()=>openContactOrBot(memberId)},
+    {label:isAdmin?'Снять права администратора':'Назначить администратором', icon:icon('star',18), onClick:()=>{
+      if(isAdmin) c.admins=c.admins.filter(a=>a!==memberId); else { c.admins=c.admins||[]; c.admins.push(memberId); }
+      toast(isAdmin?'Права сняты':'Назначен(а) администратором'); render();
+    }},
+    {label:'Удалить из группы', icon:icon('trash',18), danger:true, onClick:()=>{
+      c.members=c.members.filter(m=>m!==memberId); c.admins=(c.admins||[]).filter(a=>a!==memberId);
+      sysNoticeInChat(c, displayName(memberId)+' удалён(а) из группы'); toast('Удалён(а)'); render();
+    }}
+  ]);
+}
+function addMemberSheet(chatId){
+  const c=state.chats[chatId];
+  const candidates=[...Object.values(state.contacts), ...Object.values(state.bots).filter(b=>b.status==='active')].filter(e=>!(c.members||[]).includes(e.id));
+  if(!candidates.length){ toast('Нет доступных контактов для добавления'); return; }
+  openSheet('Добавить участника', candidates.map(e=>({label:e.name, icon:icon('user',20), onClick:()=>{
+    c.members.push(e.id); sysNoticeInChat(c, displayName(e.id)+' добавлен(а) в группу'); toast('Добавлен(а)'); render();
+  }})));
+}
+
+/* ===================== CONTACTS AREA ===================== */
+function renderContactsArea(v){
+  if(v==='contacts.profile') return renderContactProfile();
+  return renderContactsList();
+}
+function contactsHtml(){
+  const q=(state._contactFilter||'').trim().toLowerCase();
+  const list=Object.values(state.contacts).filter(ct=>!q||(ct.name||'').toLowerCase().includes(q)||(ct.username||'').toLowerCase().includes(q)||(ct.phone||'').includes(q));
+  if(!list.length) return q ? '<div class="emptystate"><div class="em">'+icon('search',52)+'</div><div class="t1">Ничего не найдено</div></div>' : '<div class="emptystate"><div class="em">'+icon('users',52)+'</div><div class="t1">Нет контактов</div><div class="t2">Добавьте первый контакт, чтобы начать переписку.</div></div>';
+  return list.sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(ct=>'<div class="listitem" onclick="openContactOrBot(\''+ct.id+'\')">'+avatarHTML(ct.id,50)+'<div class="li-mid"><div class="li-name">'+esc(ct.name)+'</div><div class="li-msg">'+esc(ct.username?('@'+ct.username):(ct.phone||''))+'</div></div></div>').join('');
+}
+function renderContactsList(){
+  return '<div class="topbar"><div class="title">Контакты</div></div><div class="searchbar"><input placeholder="Поиск контактов" value="'+esc(state._contactFilter||'')+'" oninput="filterContacts(this.value)"></div><div id="contactlistwrap">'+contactsHtml()+'</div>';
+}
+function filterContacts(v){ state._contactFilter=v; const w=document.getElementById('contactlistwrap'); if(w) w.innerHTML=contactsHtml(); }
+function openContactOrBot(id){ state.currentContactId=id; go('contacts.profile'); }
+function renderContactProfile(){
+  const id=state.currentContactId;
+  const e=getEntity(id);
+  if(!e) return renderContactsList();
+  const isBot=isBotId(id);
+  const deleted=e.status==='deleted';
+  const frozen=e.status==='frozen';
+  const mutualGroups=Object.values(state.chats).filter(c=>c.members && c.members.includes(id) && c.members.includes('me'));
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Профиль</div></div>
+    <div class="profilehead">
+      <div style="position:relative">
+        ${avatarHTML(id,100)}
+        ${!deleted?`<label style="position:absolute;right:-2px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;border:3px solid var(--bg);cursor:pointer">${icon('camera',16)}<input type="file" accept="image/*" style="display:none" onchange="changeEntityAvatar('${id}',event)"></label>`:''}
+      </div>
+      <div class="pname">${esc(displayName(id))}</div>
+      <div class="psub">${deleted?'Аккаунт удалён': state.blocked[id]?'Заблокирован': frozen?'Аккаунт заморожен':(isBot?'@'+e.username+' • '+presenceLabel(e):(e.username?'@'+e.username:(e.phone||'')))}</div>
+    </div>
+    <div class="actionrow">
+      <div class="actionchip" onclick="openContactChat('${id}')"><div class="aic">${icon('message',20)}</div>Написать</div>
+      <div class="actionchip" onclick="toast('Демо-звонок недоступен')"><div class="aic">${icon('phonecall',20)}</div>Звонок</div>
+      <div class="actionchip" onclick="contactMoreSheet('${id}')"><div class="aic">${icon('dots',20)}</div>Ещё</div>
+    </div>
+    <div class="section">
+      ${(e.bio||e.trait)?`<div class="row"><span class="ric">${icon('filetext',20)}</span><div class="rtxt"><div class="rmain">${esc(e.bio||('Любит: '+e.trait))}</div><div class="rsub">О себе</div></div></div>`:''}
+      ${(!isBot && e.phone)?`<div class="row"><span class="ric">${icon('smartphone',20)}</span><div class="rtxt"><div class="rmain">${esc(e.phone)}</div><div class="rsub">Телефон</div></div></div>`:''}
+      ${e.username?`<div class="row"><span class="ric">@</span><div class="rtxt"><div class="rmain">${esc(e.username)}</div><div class="rsub">Имя пользователя</div></div></div>`:''}
+    </div>
+    ${mutualGroups.length?`<div class="section"><div class="h">ОБЩИЕ ГРУППЫ</div>${mutualGroups.map(g=>`<div class="row" onclick="openGroupInfoFor('${g.id}')"><span class="ric">${icon(g.type==='channel'?'megaphone':'users',20)}</span><div class="rtxt"><div class="rmain">${esc(g.title)}</div></div></div>`).join('')}</div>`:''}
+    ${(isBot && !state.contacts[id] && !deleted)?`<div class="section"><div class="row" onclick="addBotToContacts('${id}')"><span class="ric">${icon('plus',20)}</span><div class="rtxt"><div class="rmain">Добавить в контакты</div></div></div></div>`:''}
+  `;
+}
+function openContactChat(id){ const c=newPrivateChat(id); state.currentChatId=c.id; state.activeTab='chats'; state.stack=['chats.list','chats.chat']; render(); }
+function changeEntityAvatar(id, ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ state.contactAvatarOverride[id]=r.result; toast('Фото обновлено'); render(); };
+  r.readAsDataURL(f);
+}
+function addBotToContacts(id){
+  const b=state.bots[id];
+  state.contacts[id]={id, name:b.name, username:b.username, phone:'', bio:b.trait, birthday:'', avatar:b.avatar, isBot:true};
+  toast('Добавлено в контакты'); render();
+}
+function contactMoreSheet(id){
+  const c=state.contacts[id];
+  const pc=Object.values(state.chats).find(x=>x.type==='private'&&x.peerId===id);
+  const items=[];
+  if(pc) items.push({label:pc.mutedUntil>Date.now()?'Включить уведомления':'Отключить уведомления', icon:icon('bellslash',18), onClick:()=>{ pc.mutedUntil=pc.mutedUntil>Date.now()?0:Date.now()+3.15e10; toast(pc.mutedUntil?'Уведомления отключены':'Уведомления включены'); render(); }});
+  if(c) items.push({label:'Удалить контакт', icon:icon('trash',18), danger:true, onClick:()=>{ delete state.contacts[id]; toast('Контакт удалён'); switchTab('contacts'); }});
+  const isBl=!!state.blocked[id];
+  items.push({label:isBl?'Разблокировать':'Заблокировать', icon:icon('block',18), danger:!isBl, onClick:()=>{ if(isBl) delete state.blocked[id]; else state.blocked[id]=true; toast(isBl?'Пользователь разблокирован':'Пользователь заблокирован'); render(); }});
+  openSheet(displayName(id), items);
+}
+
+/* ===================== SETTINGS AREA ===================== */
+function renderSettingsArea(v){
+  switch(v){
+    case 'settings.account': return renderSettingsAccount();
+    case 'settings.chatsettings': return renderSettingsChat();
+    case 'settings.privacy': return renderSettingsPrivacy();
+    case 'settings.notifications': return renderSettingsNotifications();
+    case 'settings.data': return renderSettingsData();
+    case 'settings.folders': return renderSettingsFolders();
+    case 'settings.devices': return renderSettingsDevices();
+    case 'settings.power': return renderSettingsPower();
+    case 'settings.language': return renderSettingsLanguage();
+    case 'settings.premium': return renderSettingsPremium();
+    case 'settings.stars': return renderSettingsStars();
+    case 'settings.wallet': return renderSettingsWallet();
+    case 'settings.static': return renderSettingsStatic();
+    case 'settings.ai': return renderSettingsAI();
+    default: return renderSettingsRoot();
+  }
+}
+function settingsRow(icon,title,sub,onClick){
+  return `<div class="row" onclick="${onClick}"><span class="ric">${icon}</span><div class="rtxt"><div class="rmain">${esc(title)}</div>${sub?`<div class="rsub">${esc(sub)}</div>`:''}</div><span class="chev">›</span></div>`;
+}
+function renderSettingsRoot(){
+  return `<div class="topbar"><div class="title">Настройки</div></div>
+    <div class="profilehead" onclick="go('settings.account')" style="cursor:pointer">
+      ${avatarHTML('me',90)}
+      <div class="pname">${esc(displayName('me'))}</div>
+      <div class="psub">${state.settings.privacy.phone==='nobody'?'номер скрыт':esc(state.user.phone)}</div>
+    </div>
+    <div class="section">
+      ${settingsRow(icon('message',20),'Настройки чатов','Тема, обои, анимации',"go('settings.chatsettings')")}
+      ${settingsRow(icon('lock',20),'Конфиденциальность','Кто видит вашу информацию',"go('settings.privacy')")}
+      ${settingsRow(icon('bell',20),'Уведомления','Звуки, превью сообщений',"go('settings.notifications')")}
+      ${settingsRow(icon('database',20),'Данные и память','Кэш и хранилище',"go('settings.data')")}
+      ${settingsRow(icon('folder',20),'Папки с чатами','Сортировка чатов',"go('settings.folders')")}
+      ${settingsRow(icon('monitor',20),'Устройства','Активные сеансы',"go('settings.devices')")}
+      ${settingsRow(icon('battery',20),'Энергосбережение','Реже фоновая активность ботов',"go('settings.power')")}
+      ${settingsRow(icon('globe',20),'Язык','Русский / English',"go('settings.language')")}
+      ${settingsRow(icon('bot',20),'ИИ ботов', state.aiStatus==='ok'?'работает':(state.aiStatus==='fail'?'нет соединения':'Claude'),"go('settings.ai')")}
+    </div>
+    <div class="section">
+      ${settingsRow(icon('star',20),'Telegram Premium','',"go('settings.premium')")}
+      ${settingsRow(icon('sparkles',20),'Звёзды Telegram', String(state.stars), "go('settings.stars')")}
+      ${settingsRow(icon('wallet',20),'Кошелёк','', "go('settings.wallet')")}
+      ${settingsRow(icon('gift',20),'Отправить подарок','', "openGiftSheet()")}
+    </div>
+    <div class="section">
+      ${settingsRow(icon('help',20),'Вопросы о Telegram','', "go('settings.static')")}
+      ${settingsRow(icon('shield',20),'Политика конфиденциальности','', "go('settings.static')")}
+    </div>
+    <div class="hint" style="text-align:center">NebulaGram demo v1.0 • шуточный клон интерфейса, не связан с Telegram</div>`;
+}
+function renderSettingsAccount(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Аккаунт</div></div>
+    <div class="profilehead">
+      <div style="position:relative">${avatarHTML('me',90)}
+        <label style="position:absolute;right:-2px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;border:3px solid var(--bg);cursor:pointer">${icon('camera',16)}<input type="file" accept="image/*" style="display:none" onchange="onProfileAvatarPick(event)"></label>
+      </div>
+    </div>
+    <div class="section">
+      <div class="formlabel" style="margin-top:8px">Имя</div>
+      <div style="padding:0 14px 10px"><input class="textinput" value="${esc(state.user.name)}" oninput="state.user.name=this.value" onblur="scheduleSave();render()"></div>
+      <div class="formlabel">О себе</div>
+      <div style="padding:0 14px 14px"><textarea class="textinput" maxlength="140" oninput="state.user.bio=this.value" onblur="scheduleSave()">${esc(state.user.bio)}</textarea></div>
+    </div>
+    <div class="section">
+      <div class="h">ИНФОРМАЦИЯ О ВАС</div>
+      <div class="row"><span class="ric">${icon('smartphone',20)}</span><div class="rtxt"><div class="rmain">${esc(state.user.phone)}</div><div class="rsub">Телефон</div></div></div>
+      <div class="row"><span class="ric">@</span><div class="rtxt"><input class="textinput" style="padding:6px 8px" value="${esc(state.user.username)}" oninput="state.user.username=this.value" onblur="scheduleSave();render()"></div></div>
+      <div class="row"><span class="ric">${icon('cake',20)}</span><div class="rtxt"><input class="textinput" style="padding:6px 8px" placeholder="ДД.ММ" value="${esc(state.user.birthday)}" oninput="state.user.birthday=this.value" onblur="scheduleSave()"></div></div>
+    </div>
+    <div class="section">
+      <div class="row" onclick="toggleAutoReply()"><span class="ric">${icon('bot',20)}</span><div class="rtxt"><div class="rmain">Автоответчик</div><div class="rsub">Отвечать за вас, пока вы не в сети</div></div><div class="switch ${state.settings.autoReply?'on':''}"><div class="knob"></div></div></div>
+      ${state.settings.autoReply?`<div style="padding:0 14px 14px"><textarea class="textinput" oninput="state.settings.autoReplyText=this.value" onblur="scheduleSave()">${esc(state.settings.autoReplyText)}</textarea></div>`:''}
+    </div>
+    <div class="section"><div class="row danger" onclick="confirmDeleteAccount()"><span class="ric">${icon('warning',20)}</span><div class="rtxt"><div class="rmain">Удалить аккаунт</div><div class="rsub">Действие необратимо</div></div></div></div>`;
+}
+function toggleAutoReply(){ state.settings.autoReply=!state.settings.autoReply; render(); scheduleSave(); }
+function renderSettingsChat(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Настройки чатов</div></div>
+    <div class="section">
+      <div class="row" onclick="toggleTheme()"><span class="ric">${icon('moon',20)}</span><div class="rtxt"><div class="rmain">Тёмная тема</div></div><div class="switch ${state.theme==='dark'?'on':''}"><div class="knob"></div></div></div>
+      <div class="row" onclick="toggleAnimations()"><span class="ric">${icon('sparkles',20)}</span><div class="rtxt"><div class="rmain">Анимации</div></div><div class="switch ${state.settings.animations?'on':''}"><div class="knob"></div></div></div>
+    </div>
+    <div class="section"><div class="h">ОБОИ ЧАТА</div>
+      ${['default','ocean','sunset','forest'].map(w=>`<div class="row" onclick="setWallpaper('${w}')"><span class="ric">${icon('palette',20)}</span><div class="rtxt"><div class="rmain">${wallpaperName(w)}</div></div>${state.settings.wallpaper===w?'<span style="color:var(--accent)">'+icon('check',18)+'</span>':''}</div>`).join('')}
+    </div>`;
+}
+function wallpaperName(w){ return {default:'Стандартные',ocean:'Океан',sunset:'Закат',forest:'Лес'}[w]; }
+function toggleTheme(){ state.theme=state.theme==='dark'?'light':'dark'; render(); scheduleSave(); }
+function toggleAnimations(){ state.settings.animations=!state.settings.animations; render(); scheduleSave(); }
+function setWallpaper(w){ state.settings.wallpaper=w; render(); scheduleSave(); toast('Обои изменены'); }
+function renderSettingsPrivacy(){
+  const opt=(key,label)=>`<div class="section"><div class="h">${esc(label.toUpperCase())}</div>
+    ${['everyone','contacts','nobody'].map(v=>`<div class="row" onclick="setPrivacy('${key}','${v}')"><div class="rtxt"><div class="rmain">${privacyLabel(v)}</div></div>${state.settings.privacy[key]===v?'<span style="color:var(--accent)">'+icon('check',18)+'</span>':''}</div>`).join('')}</div>`;
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Конфиденциальность</div></div>
+    ${opt('lastSeen','Кто видит время захода')}
+    ${opt('phone','Кто видит номер телефона')}
+    ${opt('birthday','Кто видит дату рождения')}
+    <div class="hint">Эти настройки влияют на то, что о вас видят собеседники в этом демо.</div>`;
+}
+function privacyLabel(v){ return {everyone:'Все',contacts:'Мои контакты',nobody:'Никто'}[v]; }
+function setPrivacy(key,val){ state.settings.privacy[key]=val; render(); scheduleSave(); toast('Настройка сохранена'); }
+function renderSettingsNotifications(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Уведомления</div></div>
+    <div class="section">
+      <div class="row" onclick="toggleNotifSound()"><span class="ric">${icon('volume',20)}</span><div class="rtxt"><div class="rmain">Звук</div></div><div class="switch ${state.settings.notifSound?'on':''}"><div class="knob"></div></div></div>
+      <div class="row" onclick="toggleNotifPreview()"><span class="ric">${icon('eye',20)}</span><div class="rtxt"><div class="rmain">Показывать текст сообщения</div></div><div class="switch ${state.settings.notifPreview?'on':''}"><div class="knob"></div></div></div>
+    </div>`;
+}
+function toggleNotifSound(){ state.settings.notifSound=!state.settings.notifSound; render(); scheduleSave(); }
+function toggleNotifPreview(){ state.settings.notifPreview=!state.settings.notifPreview; render(); scheduleSave(); }
+function renderSettingsData(){
+  const msgCount=Object.values(state.chats).reduce((s,c)=>s+c.messages.length,0);
+  const mb=(msgCount*0.02+3.4).toFixed(1);
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Данные и память</div></div>
+    <div class="section">
+      <div class="row"><span class="ric">${icon('database',20)}</span><div class="rtxt"><div class="rmain">Использовано ${mb} МБ</div><div class="rsub">${msgCount} сообщений в кэше</div></div></div>
+      <div class="row" onclick="clearCache()"><span class="ric">${icon('trash',20)}</span><div class="rtxt"><div class="rmain">Очистить кэш</div></div></div>
+    </div>`;
+}
+function clearCache(){ toast('Кэш очищен, освобождено 3.4 МБ'); }
+function renderSettingsFolders(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Папки с чатами</div></div>
+    <div class="section">
+      ${state.folders.map(f=>`<div class="row"><span class="ric">${icon('folder',20)}</span><div class="rtxt"><div class="rmain">${esc(f.name)}</div><div class="rsub">${f.chatIds.length} чатов</div></div><span class="chev" onclick="event.stopPropagation();deleteFolder('${f.id}')">${icon('close',18)}</span></div>`).join('')}
+      <div class="row" onclick="openFolderCreate()"><span class="ric">${icon('plus',20)}</span><div class="rtxt"><div class="rmain">Создать папку</div></div></div>
+    </div>`;
+}
+function deleteFolder(id){ state.folders=state.folders.filter(f=>f.id!==id); if(state.activeFolder===id) state.activeFolder='all'; render(); scheduleSave(); }
+function openFolderCreate(){
+  const chats=Object.values(state.chats).filter(c=>c.type!=='system');
+  openModal(`<div class="mtitle">Новая папка</div>
+    <input id="folname" class="textinput" placeholder="Название папки" style="margin-bottom:12px">
+    <div class="formlabel" style="margin-left:0">Чаты</div>
+    ${chats.length? chats.map(c=>`<label class="pickitem"><input type="checkbox" class="folchat" value="${c.id}">${esc(chatTitle(c))}</label>`).join('') : '<div class="hint">Нет чатов для добавления</div>'}
+    <div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Отмена</button><button class="bigbtn" onclick="createFolder()">Создать</button></div>`);
+}
+function createFolder(){
+  const name=document.getElementById('folname').value.trim();
+  if(!name){ toast('Введите название'); return; }
+  const chatIds=Array.from(document.querySelectorAll('.folchat:checked')).map(el=>el.value);
+  state.folders.push({id:uid('fol'), name, chatIds});
+  closeModal(); toast('Папка создана'); render(); scheduleSave();
+}
+function renderSettingsDevices(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Устройства</div></div>
+    <div class="section">
+      ${state.devices.map(d=>`<div class="row"><span class="ric">${icon('monitor',20)}</span><div class="rtxt"><div class="rmain">${esc(d.name)}${d.current?' (текущий)':''}</div><div class="rsub">${esc(d.sub)}</div></div>${!d.current?`<span class="chev" onclick="terminateDevice('${d.id}')" style="color:var(--danger);font-size:13px">Завершить</span>`:''}</div>`).join('')}
+    </div>
+    <div class="hint">Демо: показывает, как выглядят активные сеансы.</div>`;
+}
+function terminateDevice(id){ state.devices=state.devices.filter(d=>d.id!==id); render(); toast('Сеанс завершён'); }
+function renderSettingsPower(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Энергосбережение</div></div>
+    <div class="section"><div class="row" onclick="togglePower()"><span class="ric">${icon('battery',20)}</span><div class="rtxt"><div class="rmain">Экономия энергии</div><div class="rsub">Реже фоновая активность ботов</div></div><div class="switch ${state.settings.powerSaving?'on':''}"><div class="knob"></div></div></div></div>`;
+}
+function togglePower(){ state.settings.powerSaving=!state.settings.powerSaving; render(); scheduleSave(); toast(state.settings.powerSaving?'Экономия энергии включена':'Экономия энергии выключена'); }
+function renderSettingsLanguage(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Язык</div></div>
+    <div class="section">
+      <div class="row" onclick="setLanguage('ru')"><div class="rtxt"><div class="rmain">Русский</div></div>${state.language==='ru'?'<span style="color:var(--accent)">'+icon('check',18)+'</span>':''}</div>
+      <div class="row" onclick="setLanguage('en')"><div class="rtxt"><div class="rmain">English</div></div>${state.language==='en'?'<span style="color:var(--accent)">'+icon('check',18)+'</span>':''}</div>
+    </div>
+    <div class="hint">Язык влияет на язык ответов ИИ-ботов и часть интерфейса.</div>`;
+}
+function setLanguage(l){ state.language=l; render(); scheduleSave(); toast(l==='en'?'Language switched to English':'Язык переключён на русский'); }
+function renderSettingsPremium(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Telegram Premium</div></div>
+    <div class="profilehead"><div class="hero-emoji" style="color:var(--star)">${icon('star',54)}</div><div class="pname">NebulaGram Premium</div><div class="psub">Демо-версия — без реальной оплаты</div></div>
+    <div class="section">${['Безлимитные папки с чатами','Значок Premium в профиле','Приоритетная поддержка','Эксклюзивные стикеры'].map(t=>`<div class="row"><span class="ric">${icon('check',20)}</span><div class="rtxt"><div class="rmain">${esc(t)}</div></div></div>`).join('')}</div>
+    <div style="padding:0 14px 20px"><button class="bigbtn" onclick="toast('Демо: оплата недоступна')">Оформить Premium</button></div>`;
+}
+function renderSettingsStars(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Звёзды Telegram</div></div>
+    <div class="stargame">
+      <div class="sbig">${icon('star',30)} ${state.stars}</div>
+      <div style="color:#c9b8ea;font-size:13px">баланс звёзд</div>
+      <button class="starbtn" id="starbtn" ${state.starEnergy<1?'disabled':''} onclick="tapStar()">${icon('star',56)}</button>
+      <div style="font-size:13px;color:#c9b8ea">Энергия: ${Math.floor(state.starEnergy)}/100</div>
+      <div class="energybar"><div class="energyfill" style="width:${state.starEnergy}%"></div></div>
+      <div class="hint" style="color:#a08fc4">TapStars Bot: жмите на звезду, чтобы заработать. Энергия восстанавливается со временем.</div>
+    </div>
+    <div class="section"><div class="h">ИСТОРИЯ</div>
+      <div class="row"><span class="ric">${icon('gift',20)}</span><div class="rtxt"><div class="rmain">Подарок от друга</div><div class="rsub">+5 звёзд</div></div></div>
+      <div class="row"><span class="ric">${icon('sparkles',20)}</span><div class="rtxt"><div class="rmain">Бонус за регистрацию</div><div class="rsub">+4 звезды</div></div></div>
+    </div>`;
+}
+function tapStar(){
+  if(state.starEnergy<1) return;
+  state.starEnergy-=1; state.stars+=1;
+  render(); scheduleSave();
+}
+function energyRegen(){
+  if(state.starEnergy<100){ state.starEnergy=Math.min(100, state.starEnergy+1); if(state.screen==='app' && curView()==='settings.stars') render(); }
+}
+function renderSettingsAI(){
+  const st=state.aiStatus;
+  const stText = st==='ok'?'Работает':(st==='fail'?'Нет соединения':'Ещё не проверялось');
+  const sp={slow:'Медленно',normal:'Обычно',fast:'Быстро'};
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">ИИ ботов</div></div>
+    <div class="section">
+      <div class="row"><span class="ric">${icon('bot',20)}</span><div class="rtxt"><div class="rmain">Статус: ${stText}</div><div class="rsub">Каждую реплику бота пишет модель Claude, без заготовок</div></div></div>
+      <div class="row" onclick="testAI()"><span class="ric">${icon('refresh',20)}</span><div class="rtxt"><div class="rmain">Проверить соединение</div></div></div>
+    </div>
+    <div class="section"><div class="h">АКТИВНОСТЬ БОТОВ</div>
+      ${['slow','normal','fast'].map(k=>`<div class="row" onclick="setBotSpeed('${k}')"><div class="rtxt"><div class="rmain">${sp[k]}</div></div>${state.botSpeed===k?'<span style="color:var(--accent)">'+icon('check',18)+'</span>':''}</div>`).join('')}
+    </div>
+    <div class="hint">Определяет, как часто боты знакомятся с вами, создают группы, переписываются между собой и пишут в каналы.</div>`;
+}
+async function testAI(){
+  toast('Проверяю соединение...');
+  try{ const t=await callClaude('Отвечай одним коротким словом.',[{role:'user',content:'Скажи: работает'}],20); state.aiStatus='ok'; toast('ИИ отвечает: '+t.slice(0,30)); }
+  catch(e){ console.error(e); state.aiStatus='fail'; toast('Нет соединения с ИИ'); }
+  render();
+}
+function setBotSpeed(k){ state.botSpeed=k; render(); scheduleSave(); toast('Настройка сохранена'); }
+function renderSettingsWallet(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Кошелёк</div></div>
+    <div class="profilehead"><div class="hero-emoji">${icon('wallet',54)}</div><div class="pname">0.00 TON</div><div class="psub">Демо-кошелёк</div></div>
+    <div class="hint" style="text-align:center">Пополнение и вывод недоступны в этой демо-версии.</div>`;
+}
+function renderSettingsStatic(){
+  return `<div class="topbar"><span class="back" onclick="back()">‹</span><div class="title">Информация</div></div>
+    <div class="hint">NebulaGram — шуточный демонстрационный клон интерфейса Telegram, созданный для развлечения. Все данные хранятся только в этом окне; реплики ИИ-ботов генерируются через API Claude.</div>`;
+}
+function openGiftSheet(){
+  const targets=Object.values(state.contacts);
+  if(!targets.length){ toast('Сначала добавьте контакт'); return; }
+  openSheet('Кому подарок?', targets.map(t=>({label:t.name, icon:icon('gift',18), onClick:()=>sendGift(t.id)})));
+}
+function sendGift(id){
+  if(state.stars<1){ toast('Недостаточно звёзд'); return; }
+  const c=newPrivateChat(id);
+  c.messages.push({id:uid('m'), senderId:'me', text:'Подарок для вас!', gift:{icon:randOf(['gift','heart','star','cake','rocket','sparkles'])}, time:Date.now(), read:false});
+  toast('Подарок отправлен'); state.stars-=1;
+  state.currentChatId=c.id; state.activeTab='chats'; state.stack=['chats.list','chats.chat']; state._forceBottom=true; render();
+  const peer=peerEntity(c);
+  if(!state.bots[id] && peer) ensurePersona(peer);
+  if(peerReplyable(peer) && !state.blocked[id]) triggerBotReply(c,peer);
+}
+function confirmDeleteAccount(){
+  openModal(`<div class="mtitle">Удалить аккаунт?</div>
+    <div class="mbody">Это действие необратимо. Ваше имя везде сменится на «Удалённый аккаунт», переписка станет недоступна для отправки.</div>
+    <div class="mrow"><button class="bigbtn ghost" onclick="closeModal()">Отмена</button><button class="bigbtn danger" onclick="deleteAccountNow()">Удалить</button></div>`);
+}
+function deleteAccountNow(){
+  state.user.deleted=true;
+  closeModal();
+  sysNotice('Аккаунт '+state.user.name+' был удалён.','trash');
+  state.screen='deleted';
+  render();
+}
+
+/* ===================== BOT ENGINE ===================== */
+function activeBots(){ return Object.values(state.bots).filter(b=>b.status==='active'); }
+function hiddenBots(){ return Object.values(state.bots).filter(b=>b.status==='hidden'); }
+function publicChats(){ return Object.values(state.chats).filter(c=>(c.type==='group'||c.type==='channel')&&c.isPublic); }
+function bootEngine(){
+  if(engineLoopStarted) return;
+  engineLoopStarted=true;
+  for(let i=Object.keys(state.bots).length;i<5;i++) actSpawnBot();
+  if(Object.values(state.chats).filter(c=>c.type!=='system').length===0){
+    setTimeout(()=>{ if(state.user.deleted) return; const r=actBotDMUser(); if(r&&r.catch) r.catch(console.error); }, 9000);
+  }
+  scheduleEngine();
+  setInterval(energyRegen, 3000);
+}
+function speedFactor(){ return state.botSpeed==='slow'?1.8:(state.botSpeed==='fast'?0.45:1); }
+function scheduleEngine(){
+  const delay=(15000+Math.random()*10000)*speedFactor()+(state.settings.powerSaving?20000:0);
+  setTimeout(()=>{ try{ engineTick(); }catch(e){ console.error('engine error', e); } scheduleEngine(); }, delay);
+}
+function presenceTick(){
+  activeBots().forEach(b=>{
+    if(b.onlineNow){ if(Math.random()<0.4){ b.onlineNow=false; b.lastSeenAt=Date.now(); } }
+    else if(Math.random()<0.25){ b.onlineNow=true; }
+  });
+  if(state.screen==='app'){ const v=curView(); if(v==='chats.chat'||v==='contacts.profile'||v==='chats.groupinfo') render(); }
+}
+function engineTick(){
+  if(state.user.deleted) return;
+  presenceTick();
+  const botIn=id=>isBotId(id)&&state.bots[id]&&state.bots[id].status==='active';
+  const actions=[];
+  const totalBots=Object.keys(state.bots).length;
+  const privCount=Object.values(state.chats).filter(c=>c.type==='private').length;
+  if(totalBots<14) actions.push({w:3, fn:actSpawnBot});
+  if(hiddenBots().length && publicChats().some(c=>((c.members||[]).length)<9)) actions.push({w:3, fn:actBotJoinPublic});
+  if(hiddenBots().length && privCount<7) actions.push({w:privCount<2?6:2, fn:actBotDMUser});
+  if(activeBots().length>=1) actions.push({w:2, fn:actBotCreatesGroup});
+  if(Object.values(state.chats).some(c=>(c.type==='group'||c.type==='channel')&&(c.members||[]).some(botIn))) actions.push({w:2, fn:actBotLeaves});
+  const chattyGroups=Object.values(state.chats).filter(c=>c.type==='group' && (c.members||[]).filter(botIn).length>=2);
+  if(chattyGroups.length) actions.push({w:5, fn:function(){ return actBotToBotChatter(chattyGroups); }});
+  if(Object.values(state.chats).some(c=>c.type==='channel' && (c.admins||[]).some(botIn))) actions.push({w:3, fn:actBotChannelPost});
+  if(activeBots().length) actions.push({w:1, fn:actFreezeBot});
+  if(activeBots().length) actions.push({w:1, fn:actBotSelfDelete});
+  actions.push({w:5, fn:function(){}});
+  const totalW=actions.reduce((s,a)=>s+a.w,0);
+  let r=Math.random()*totalW;
+  for(const a of actions){ if(r<a.w){ const res=a.fn(); if(res&&res.catch) res.catch(e=>console.error('action error',e)); return; } r-=a.w; }
+}
+function actSpawnBot(){ const b=makeBot(); state.bots[b.id]=b; scheduleSave(); }
+function actBotJoinPublic(){
+  const hb=hiddenBots(); if(!hb.length) return;
+  const pcs=publicChats().filter(c=>((c.members||[]).length)<9);
+  if(!pcs.length) return;
+  const bot=randOf(hb), chat=randOf(pcs);
+  bot.status='active'; markPresence(bot,true); chat.members=chat.members||[]; chat.members.push(bot.id);
+  sysNoticeInChat(chat, bot.name+' присоединил(ся/ась) к '+(chat.type==='channel'?'каналу':'группе')+' по ссылке');
+  if(state.currentChatId!==chat.id) chat.unread=(chat.unread||0)+1;
+  render();
+}
+let dmPending=false;
+async function actBotDMUser(){
+  if(dmPending) return;
+  const hb=hiddenBots().filter(b=>!state.blocked[b.id]); if(!hb.length) return;
+  dmPending=true;
+  try{
+    const bot=randOf(hb);
+    const tmp={id:'tmp', type:'private', peerId:bot.id, messages:[]};
+    const text=await generateBotMessage(bot,tmp,{opener:true});
+    if(!text || state.user.deleted || bot.status!=='hidden') return;
+    bot.status='active'; markPresence(bot,true);
+    const chat=newPrivateChat(bot.id);
+    chat.messages.push({id:uid('m'), senderId:bot.id, text, time:Date.now()});
+    if(!isChatOpen(chat.id)) chat.unread=(chat.unread||0)+1;
+    playNotifSound(); render();
+    if(state.settings.autoReply){
+      setTimeout(()=>{ chat.messages.push({id:uid('m'), senderId:'me', text:state.settings.autoReplyText, time:Date.now(), read:false}); render(); triggerBotReply(chat,bot); }, 2500);
+    }
+  } finally { dmPending=false; }
+}
+function actBotCreatesGroup(){
+  const ab=activeBots(); if(!ab.length) return;
+  const creator=randOf(ab);
+  const others=ab.filter(b=>b.id!==creator.id).sort(()=>Math.random()-0.5).slice(0,1+Math.floor(Math.random()*2));
+  const id=uid('chat');
+  const isPublic=Math.random()<0.5;
+  const title=randOf(GROUP_TITLES);
+  const isChannel=Math.random()<0.3;
+  const chat={ id, type:isChannel?'channel':'group', title,
+    members:['me', creator.id, ...others.map(o=>o.id)], admins:[creator.id], creatorId:creator.id,
+    isPublic, link:isPublic?'nebulagram.me/'+translit(title).replace(/[^a-z0-9]/g,'').slice(0,10)+Math.floor(Math.random()*90):null,
+    messages:[], mutedUntil:0, unread:1 };
+  state.chats[id]=chat; markPresence(creator,true);
+  sysNoticeInChat(chat, creator.name+' создал(а) '+(isChannel?'канал':'группу')+' «'+title+'»');
+  sysNoticeInChat(chat, creator.name+' пригласил(а) вас');
+  render();
+}
+function actBotLeaves(){
+  const candidates=Object.values(state.chats).filter(c=>(c.type==='group'||c.type==='channel')&&(c.members||[]).some(id=>isBotId(id)&&state.bots[id]&&state.bots[id].status==='active'));
+  if(!candidates.length) return;
+  const chat=randOf(candidates);
+  const botIds=chat.members.filter(id=>isBotId(id)&&state.bots[id]&&state.bots[id].status==='active');
+  if(!botIds.length) return;
+  const bid=randOf(botIds);
+  chat.members=chat.members.filter(m=>m!==bid);
+  chat.admins=(chat.admins||[]).filter(a=>a!==bid);
+  sysNoticeInChat(chat, state.bots[bid].name+' покинул(а) '+(chat.type==='channel'?'канал':'группу'));
+  render();
+}
+async function actBotChannelPost(){
+  const chs=Object.values(state.chats).filter(c=>c.type==='channel' && (c.admins||[]).some(a=>isBotId(a)&&state.bots[a]&&state.bots[a].status==='active'));
+  if(!chs.length) return;
+  const c=randOf(chs);
+  const bot=state.bots[randOf(c.admins.filter(a=>isBotId(a)&&state.bots[a]&&state.bots[a].status==='active'))];
+  const text=await generateBotMessage(bot,c,{channelPost:true});
+  if(!text || !state.chats[c.id]) return;
+  c.messages.push({id:uid('m'), senderId:bot.id, text, time:Date.now()});
+  markPresence(bot,true);
+  if(!isChatOpen(c.id)) c.unread=(c.unread||0)+1;
+  playNotifSound(); render();
+}
+async function actBotToBotChatter(groups){
+  const chat=randOf(groups);
+  const botIds=chat.members.filter(id=>isBotId(id)&&state.bots[id]&&state.bots[id].status==='active');
+  if(botIds.length<2) return;
+  const order=botIds.slice().sort(()=>Math.random()-0.5);
+  const rounds=2+Math.floor(Math.random()*2);
+  for(let i=0;i<rounds;i++){
+    const bot=state.bots[order[i%order.length]];
+    if(!bot||bot.status!=='active'||!state.chats[chat.id]||!chat.members.includes(bot.id)) break;
+    typingChats[chat.id]=bot.id; if(isChatOpen(chat.id)) render();
+    const text=await generateBotMessage(bot,chat);
+    delete typingChats[chat.id];
+    if(!text){ render(); break; }
+    if(!state.chats[chat.id] || !chat.members.includes(bot.id)) break;
+    chat.messages.push({id:uid('m'), senderId:bot.id, text, time:Date.now()});
+    markPresence(bot,true);
+    if(!isChatOpen(chat.id)) chat.unread=(chat.unread||0)+1;
+    render(); playNotifSound();
+    await sleep(1500+Math.random()*2500);
+  }
+}
+function actFreezeBot(){
+  const ab=activeBots(); if(!ab.length || Math.random()>0.35) return;
+  const bot=randOf(ab);
+  bot.status='frozen';
+  sysNotice('Аккаунт '+bot.name+' был заморожен за подозрение в спам-активности.','snowflake');
+  render();
+}
+function actBotSelfDelete(){
+  const ab=activeBots(); if(!ab.length || Math.random()>0.3) return;
+  const bot=randOf(ab);
+  bot.status='deleted';
+  sysNotice('Пользователь '+bot.name+' удалил(а) свой аккаунт.','block');
+  render();
+}
+function playNotifSound(){
+  if(!state.settings.notifSound) return;
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.value=880; g.gain.value=0.05;
+    o.connect(g); g.connect(ctx.destination); o.start();
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
+  }catch(e){}
+}
+
+/* ===================== PERSISTENCE ===================== */
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async ()=>{
+    try{ if(window.storage) await window.storage.set('ng_state', JSON.stringify(state), false); }
+    catch(e){ console.error('save failed', e); }
+  }, 1200);
+}
+async function initApp(){
+  try{
+    if(window.storage){
+      const r=await window.storage.get('ng_state', false);
+      if(r && r.value){ state=Object.assign(defaultState(), JSON.parse(r.value)); typingChats={}; state.aiStatus='unknown'; }
+    }
+  }catch(e){ /* no saved state yet */ }
+  render();
+  if(state.screen==='app') bootEngine();
+}
+initApp();
+</script>
+</body>
+</html>
